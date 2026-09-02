@@ -17,6 +17,24 @@ if (fs.existsSync(envFile)) {
 }
 const dataFile = path.join(root, 'data', 'products.json');
 const categoriesFile = path.join(root, 'data', 'categories.json');
+
+const seedProductsFile = path.join(root, 'seed', 'products.json');
+const seedCategoriesFile = path.join(root, 'seed', 'categories.json');
+
+function ensureInitialData() {
+  fs.mkdirSync(path.dirname(dataFile), { recursive: true });
+
+  if (!fs.existsSync(dataFile) && fs.existsSync(seedProductsFile)) {
+    fs.copyFileSync(seedProductsFile, dataFile);
+  }
+
+  if (!fs.existsSync(categoriesFile) && fs.existsSync(seedCategoriesFile)) {
+    fs.copyFileSync(seedCategoriesFile, categoriesFile);
+  }
+}
+
+ensureInitialData();
+
 const distDir = path.join(root, 'dist');
 const PORT = Number(process.env.PORT || 8787);
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@domivka.local';
