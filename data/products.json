@@ -1,0 +1,222 @@
+[
+  {
+    "id": "pink-carousel",
+    "name": "Pink Carousel",
+    "ukName": "Рожева карусель",
+    "price": 820,
+    "image": "/images/pink-carousel-gift.webp",
+    "collection": "Gift",
+    "badge": "gift-ready",
+    "short": "Керамічна свічка як маленький святковий об’єкт.",
+    "story": "Для подарунків, красивих полиць і вечорів, коли хочеться трошки більше магії.",
+    "details": [
+      "ручне оформлення",
+      "подарункова подача",
+      "обмежені кольорові варіації"
+    ],
+    "images": [
+      "/images/pink-carousel-gift.webp"
+    ],
+    "categories": [
+      "Gift"
+    ]
+  },
+  {
+    "id": "croissant-heart",
+    "name": "Croissant Heart",
+    "ukName": "Круасан-серце",
+    "price": 690,
+    "image": "/images/croissant-heart.webp",
+    "collection": "Sweet",
+    "badge": "playful",
+    "short": "Іронічна свічка, натхненна ранковою випічкою.",
+    "story": "Тепла, трохи французька і дуже подарункова — для тих, хто любить красиві дрібниці.",
+    "details": [
+      "скульптурна форма",
+      "ручна заливка",
+      "декоративний акцент"
+    ],
+    "images": [
+      "/images/croissant-heart.webp"
+    ],
+    "categories": [
+      "Sweet"
+    ]
+  },
+  {
+    "id": "coconut",
+    "name": "Coconut Calm",
+    "ukName": "Кокосовий спокій",
+    "price": 760,
+    "image": "/images/coconut-candle.webp",
+    "collection": "Sea",
+    "badge": "slow ritual",
+    "short": "Тропічний настрій у природній формі.",
+    "story": "Свічка для ванної, тераси або тихого вечора з музикою й відкритим вікном.",
+    "details": [
+      "натуральна фактура",
+      "затишний декор",
+      "кожен екземпляр виглядає трохи по-різному"
+    ],
+    "images": [
+      "/images/coconut-candle.webp"
+    ],
+    "categories": [
+      "Sea"
+    ]
+  },
+  {
+    "id": "shells",
+    "name": "Shell Stories",
+    "ukName": "Морські історії",
+    "price": 640,
+    "image": "/images/shell-collection.webp",
+    "collection": "Sea",
+    "badge": "collection",
+    "short": "Мініатюрні мушлі, морські зірки та форми з відчуттям літа.",
+    "story": "Маленькі скульптурні свічки, які легко комбінувати у сет або подарункову композицію.",
+    "details": [
+      "декоративні форми",
+      "можна комбінувати",
+      "підходить для gift set"
+    ],
+    "images": [
+      "/images/shell-collection.webp"
+    ],
+    "categories": [
+      "Sea"
+    ]
+  },
+  {
+    "id": "crystal-shoes",
+    "name": "Crystal Slippers",
+    "ukName": "Кришталеві туфельки",
+    "price": 980,
+    "image": "/images/crystal-shoes.webp",
+    "collection": "Statement",
+    "badge": "statement",
+    "short": "Свічка-об’єкт, яку хочеться розглядати ще до запалювання.",
+    "story": "Грайлива форма для vanity table, подарункової композиції або незвичного декору.",
+    "details": [
+      "виразна форма",
+      "арт-об’єкт",
+      "для особливих подарунків"
+    ],
+    "images": [
+      "/images/crystal-shoes.webp"
+    ],
+    "categories": [
+      "Statement"
+    ]
+  },
+  {
+    "id": "pearl-shell",
+    "name": "Pearl Shell",
+    "ukName": "Перлинна мушля",
+    "price": 790,
+    "image": "/images/pearl-shell.webp",
+    "collection": "Sea",
+    "badge": "bestseller mood",
+    "short": "Перлинна композиція у мушлі — ніжна, тактильна, трохи казкова.",
+    "story": "Працює як маленька прикраса інтер’єру й як подарунок, який запам’ятовується.",
+    "details": [
+      "перлинний декор",
+      "морська естетика",
+      "ручна композиція"
+    ],
+    "images": [
+      "/images/pearl-shell.webp"
+    ],
+    "categories": [
+      "Sea"
+    ]
+  },
+  {
+    "id": "biscuit",
+    "name": "Biscuit Glow",
+    "ukName": "Печиво зі світлом",
+    "price": 720,
+    "image": "/images/biscuit-candle.webp",
+    "collection": "Sweet",
+    "badge": "cute classic",
+    "short": "Найзатишніша форма: ніби домашнє печиво, але це свічка.",
+    "story": "Для кухні, coffee corner або подарунку людині, яка любить “cute but not childish”.",
+    "details": [
+      "текстурована форма",
+      "теплий карамельний образ",
+      "wood-wick look"
+    ],
+    "images": [
+      "/images/biscuit-candle.webp"
+    ],
+    "categories": [
+      "Sweet"
+    ]
+  },
+  {
+    "id": "meringue",
+    "name": "Meringue Bloom",
+    "ukName": "Зефірна квітка",
+    "price": 680,
+    "image": "/images/meringue-bloom.webp",
+    "collection": "Floral",
+    "badge": "soft",
+    "short": "М’які хвилі, кремові й рожеві відтінки та дуже домашня подача.",
+    "story": "Невелика свічка для bedside table, ванної або подарункового боксу.",
+    "details": [
+      "пастельні відтінки",
+      "скульптурний рельєф",
+      "компактний формат"
+    ],
+    "images": [
+      "/images/meringue-bloom.webp"
+    ],
+    "categories": [
+      "Floral"
+    ]
+  },
+  {
+    "id": "calla",
+    "name": "Calla Light",
+    "ukName": "Світло кали",
+    "price": 930,
+    "image": "/images/calla-lily.webp",
+    "collection": "Floral",
+    "badge": "art object",
+    "short": "Висока квіткова форма, що виглядає як предмет декору.",
+    "story": "Лаконічна, але характерна — для столу, полиці або атмосферної фотозони.",
+    "details": [
+      "виразний силует",
+      "скульптурна форма",
+      "декоративний акцент"
+    ],
+    "images": [
+      "/images/calla-lily.webp"
+    ],
+    "categories": [
+      "Floral"
+    ]
+  },
+  {
+    "id": "donut",
+    "name": "Donut Party",
+    "ukName": "Пончиковий настрій",
+    "price": 710,
+    "image": "/images/donut-candles.webp",
+    "collection": "Sweet",
+    "badge": "fun gift",
+    "short": "Яскраві “пончики” для подарунку, фотосесії або просто гарного настрою.",
+    "story": "Колір, посипка, трохи ностальгії — одна з найграйливіших ліній DOMIVKA.",
+    "details": [
+      "яскравий декор",
+      "подарункова форма",
+      "кольорові варіації"
+    ],
+    "images": [
+      "/images/donut-candles.webp"
+    ],
+    "categories": [
+      "Sweet"
+    ]
+  }
+]

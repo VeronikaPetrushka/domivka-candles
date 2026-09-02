@@ -1,0 +1,944 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import './styles.css';
+
+const IG = 'https://www.instagram.com/domivka_candles/';
+
+// Catalogue values are intentionally centralized here. Replace demo prices/names
+// with the exact current Instagram catalogue before production launch.
+const DEFAULT_PRODUCTS = [
+  {
+    id: 'pink-carousel',
+    name: 'Pink Carousel',
+    ukName: 'Рожева карусель',
+    price: 820,
+    image: '/images/pink-carousel-gift.webp',
+    collection: 'Gift',
+    badge: 'gift-ready',
+    short: 'Керамічна свічка як маленький святковий об’єкт.',
+    story: 'Для подарунків, красивих полиць і вечорів, коли хочеться трошки більше магії.',
+    details: ['ручне оформлення', 'подарункова подача', 'обмежені кольорові варіації'],
+  },
+  {
+    id: 'croissant-heart',
+    name: 'Croissant Heart',
+    ukName: 'Круасан-серце',
+    price: 690,
+    image: '/images/croissant-heart.webp',
+    collection: 'Sweet',
+    badge: 'playful',
+    short: 'Іронічна свічка, натхненна ранковою випічкою.',
+    story: 'Тепла, трохи французька і дуже подарункова — для тих, хто любить красиві дрібниці.',
+    details: ['скульптурна форма', 'ручна заливка', 'декоративний акцент'],
+  },
+  {
+    id: 'coconut',
+    name: 'Coconut Calm',
+    ukName: 'Кокосовий спокій',
+    price: 760,
+    image: '/images/coconut-candle.webp',
+    collection: 'Sea',
+    badge: 'slow ritual',
+    short: 'Тропічний настрій у природній формі.',
+    story: 'Свічка для ванної, тераси або тихого вечора з музикою й відкритим вікном.',
+    details: ['натуральна фактура', 'затишний декор', 'кожен екземпляр виглядає трохи по-різному'],
+  },
+  {
+    id: 'shells',
+    name: 'Shell Stories',
+    ukName: 'Морські історії',
+    price: 640,
+    image: '/images/shell-collection.webp',
+    collection: 'Sea',
+    badge: 'collection',
+    short: 'Мініатюрні мушлі, морські зірки та форми з відчуттям літа.',
+    story: 'Маленькі скульптурні свічки, які легко комбінувати у сет або подарункову композицію.',
+    details: ['декоративні форми', 'можна комбінувати', 'підходить для gift set'],
+  },
+  {
+    id: 'crystal-shoes',
+    name: 'Crystal Slippers',
+    ukName: 'Кришталеві туфельки',
+    price: 980,
+    image: '/images/crystal-shoes.webp',
+    collection: 'Statement',
+    badge: 'statement',
+    short: 'Свічка-об’єкт, яку хочеться розглядати ще до запалювання.',
+    story: 'Грайлива форма для vanity table, подарункової композиції або незвичного декору.',
+    details: ['виразна форма', 'арт-об’єкт', 'для особливих подарунків'],
+  },
+  {
+    id: 'pearl-shell',
+    name: 'Pearl Shell',
+    ukName: 'Перлинна мушля',
+    price: 790,
+    image: '/images/pearl-shell.webp',
+    collection: 'Sea',
+    badge: 'bestseller mood',
+    short: 'Перлинна композиція у мушлі — ніжна, тактильна, трохи казкова.',
+    story: 'Працює як маленька прикраса інтер’єру й як подарунок, який запам’ятовується.',
+    details: ['перлинний декор', 'морська естетика', 'ручна композиція'],
+  },
+  {
+    id: 'biscuit',
+    name: 'Biscuit Glow',
+    ukName: 'Печиво зі світлом',
+    price: 720,
+    image: '/images/biscuit-candle.webp',
+    collection: 'Sweet',
+    badge: 'cute classic',
+    short: 'Найзатишніша форма: ніби домашнє печиво, але це свічка.',
+    story: 'Для кухні, coffee corner або подарунку людині, яка любить “cute but not childish”.',
+    details: ['текстурована форма', 'теплий карамельний образ', 'wood-wick look'],
+  },
+  {
+    id: 'meringue',
+    name: 'Meringue Bloom',
+    ukName: 'Зефірна квітка',
+    price: 680,
+    image: '/images/meringue-bloom.webp',
+    collection: 'Floral',
+    badge: 'soft',
+    short: 'М’які хвилі, кремові й рожеві відтінки та дуже домашня подача.',
+    story: 'Невелика свічка для bedside table, ванної або подарункового боксу.',
+    details: ['пастельні відтінки', 'скульптурний рельєф', 'компактний формат'],
+  },
+  {
+    id: 'calla',
+    name: 'Calla Light',
+    ukName: 'Світло кали',
+    price: 930,
+    image: '/images/calla-lily.webp',
+    collection: 'Floral',
+    badge: 'art object',
+    short: 'Висока квіткова форма, що виглядає як предмет декору.',
+    story: 'Лаконічна, але характерна — для столу, полиці або атмосферної фотозони.',
+    details: ['виразний силует', 'скульптурна форма', 'декоративний акцент'],
+  },
+  {
+    id: 'donut',
+    name: 'Donut Party',
+    ukName: 'Пончиковий настрій',
+    price: 710,
+    image: '/images/donut-candles.webp',
+    collection: 'Sweet',
+    badge: 'fun gift',
+    short: 'Яскраві “пончики” для подарунку, фотосесії або просто гарного настрою.',
+    story: 'Колір, посипка, трохи ностальгії — одна з найграйливіших ліній DOMIVKA.',
+    details: ['яскравий декор', 'подарункова форма', 'кольорові варіації'],
+  },
+];
+
+const DEFAULT_CATEGORIES = ['Sweet', 'Sea', 'Floral', 'Statement', 'Gift'];
+const PROMO_CODES = {
+  DOMIVKA10: { type: 'percent', value: 10, label: '-10%' },
+  HOME15: { type: 'percent', value: 15, label: '-15%' },
+};
+const CATALOG_API = (import.meta.env.VITE_CATALOG_API_URL || '').replace(/\/$/, '');
+const LOCAL_ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@domivka.local';
+const LOCAL_ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'domivka2026';
+
+function productImages(product) {
+  const list = Array.isArray(product?.images) ? product.images : [];
+  const legacy = String(product?.image || '').trim();
+  return [...new Set([...list.map(x => String(x || '').trim()), legacy].filter(Boolean))];
+}
+
+function primaryImage(product) {
+  return productImages(product)[0] || '';
+}
+
+function productCategories(product) {
+  const list = Array.isArray(product?.categories) ? product.categories : [];
+  const legacy = String(product?.collection || '').trim();
+  return [...new Set([...list.map(x => String(x || '').trim()), legacy].filter(Boolean))];
+}
+
+function categoryLabel(product) {
+  const cats = productCategories(product);
+  return cats.length ? cats.join(' · ') : 'Без категорії';
+}
+
+function normalizeProduct(product) {
+  const images = productImages(product);
+  return {
+    id: String(product.id || '').trim(),
+    name: String(product.name || '').trim(),
+    ukName: String(product.ukName || '').trim(),
+    price: Number(product.price || 0),
+    image: images[0] || '', // legacy field kept for cart/API compatibility
+    images,
+    collection: productCategories(product)[0] || '', // legacy field kept for older data
+    categories: productCategories(product),
+    badge: String(product.badge || '').trim(),
+    short: String(product.short || '').trim(),
+    story: String(product.story || '').trim(),
+    details: Array.isArray(product.details) ? product.details.filter(Boolean) : [],
+  };
+}
+
+function slugify(value) {
+  return String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9а-яіїєґ]+/gi, '-')
+    .replace(/^-+|-+$/g, '') || `item-${Date.now()}`;
+}
+
+function money(v) {
+  return `${new Intl.NumberFormat('uk-UA').format(v)} ₴`;
+}
+
+function routeFromHash() {
+  const raw = window.location.hash.replace(/^#\/?/, '') || 'home';
+  const [path, query = ''] = raw.split('?');
+  const [page, param] = path.split('/');
+  return { page, param, query };
+}
+
+function go(path) {
+  window.location.hash = `#/${path}`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function useRoute() {
+  const [route, setRoute] = useState(routeFromHash);
+  useEffect(() => {
+    const handler = () => setRoute(routeFromHash());
+    window.addEventListener('hashchange', handler);
+    return () => window.removeEventListener('hashchange', handler);
+  }, []);
+  return route;
+}
+
+function useReveal(dep) {
+  useEffect(() => {
+    const nodes = [...document.querySelectorAll('[data-reveal]')];
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -30px' });
+    nodes.forEach(n => io.observe(n));
+    return () => io.disconnect();
+  }, [dep]);
+}
+
+function Brand({ compact = false }) {
+  return (
+    <button className={`brand ${compact ? 'brand--compact' : ''}`} onClick={() => go('home')} aria-label="DOMIVKA home">
+      <img className="brand-logo-image" src="/images/domivka-logo.webp" alt="" aria-hidden="true" />
+      <span className="brand-copy">
+        <span className="brand-word">DOMIVKA</span>
+        {!compact && <small>candles · made with feeling</small>}
+      </span>
+    </button>
+  );
+}
+
+function ClayButton({ children, className = '', onClick, type = 'button', disabled = false }) {
+  return <button type={type} disabled={disabled} className={`clay-button ${className}`} onClick={onClick}>{children}</button>;
+}
+
+function Header({ cartCount, onCart }) {
+  const [open, setOpen] = useState(false);
+  const nav = [
+    ['shop', 'Каталог'],
+    ['gifts', 'Подарунки'],
+    ['story', 'Історія'],
+    ['care', 'Догляд'],
+  ];
+  return (
+    <header className="site-header">
+      <div className="header-inner clay-surface clay-surface--glass">
+        <Brand compact />
+        <nav className={`header-nav ${open ? 'is-open' : ''}`}>
+          {nav.map(([path, label]) => <button key={path} onClick={() => { go(path); setOpen(false); }}>{label}</button>)}
+          <a href={IG} target="_blank" rel="noreferrer">Instagram ↗</a>
+        </nav>
+        <div className="header-actions">
+          <button className="mini-clay" onClick={onCart}>Кошик <b>{cartCount}</b></button>
+          <button className="menu-toggle" aria-label="Menu" onClick={() => setOpen(v => !v)}><i/><i/></button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function BackgroundLayers() {
+  return <div className="ambient" aria-hidden="true"><i className="blob blob-a"/><i className="blob blob-b"/><i className="blob blob-c"/><i className="scribble"/></div>;
+}
+
+function HomePage({ addToCart, products }) {
+  const heroRef = useRef(null);
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const pointer = e => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - .5;
+      const y = (e.clientY - r.top) / r.height - .5;
+      el.style.setProperty('--mx', x.toFixed(3));
+      el.style.setProperty('--my', y.toFixed(3));
+    };
+    el.addEventListener('pointermove', pointer);
+    return () => el.removeEventListener('pointermove', pointer);
+  }, []);
+  return (
+    <>
+      <section className="home-hero" ref={heroRef}>
+        <div className="hero-copy" data-reveal>
+          <span className="kicker"><i/> handmade candle studio</span>
+          <h1>Свічки, що<br/><em>схожі на спогади.</em></h1>
+          <p>Трохи наївні, дуже тактильні й створені для дому, який хочеться відчувати своїм.</p>
+          <div className="hero-actions">
+            <ClayButton className="clay-button--berry" onClick={() => go('shop')}>Обрати свою <span>↗</span></ClayButton>
+            <button className="soft-link" onClick={() => go('story')}>познайомитися з DOMIVKA</button>
+          </div>
+          <div className="hero-notes">
+            <span>♡ ручна робота</span><span>♡ маленькі серії</span><span>♡ gift-ready</span>
+          </div>
+        </div>
+        <div className="hero-collage" aria-label="DOMIVKA candle collection">
+          <figure className="hero-photo hero-photo--main clay-photo"><img src="/images/pink-carousel-gift.webp" alt="DOMIVKA pink candle gift set"/></figure>
+          <figure className="hero-photo hero-photo--small clay-photo"><img src="/images/pearl-shell.webp" alt="Pearl shell candle"/></figure>
+          <div className="hero-sticker clay-sticker"><span>light me</span><b>♥</b><small>slowly</small></div>
+          <div className="hero-doodle">⌁</div>
+        </div>
+      </section>
+
+      <div className="brand-marquee" aria-hidden="true"><div>{Array.from({length:8}).map((_,i)=><React.Fragment key={i}><span>DOMIVKA</span><i>✿</i><span>MADE TO FEEL LIKE HOME</span><i>♡</i></React.Fragment>)}</div></div>
+
+      <section className="section section--collections">
+        <div className="section-heading collection-heading" data-reveal>
+          <div>
+            <span className="kicker"><i/> choose a mood</span>
+            <h2>Не просто аромат.<br/><em>Маленький характер.</em></h2>
+          </div>
+          <p>У DOMIVKA свічка працює ще до того, як ви її запалили: як декор, подарунок і настрій.</p>
+        </div>
+        <div className="mood-grid">
+          {[
+            ['Sweet things','теплі, смішні, “їстівні” форми','/images/biscuit-candle.webp','Sweet','#f1bd82'],
+            ['From the sea','мушлі, перлини, спокій','/images/shell-collection.webp','Sea','#bad6e7'],
+            ['Soft bloom','квіти й кремові хвилі','/images/meringue-bloom.webp','Floral','#efb7cb'],
+          ].map((m,i)=><button key={m[0]} className="mood-card clay-surface" style={{'--mood':m[4]}} onClick={() => go(`shop?collection=${m[3]}`)} data-reveal>
+            <img src={m[2]} alt=""/><span>0{i+1}</span><div><h3>{m[0]}</h3><p>{m[1]}</p></div><b>↗</b>
+          </button>)}
+        </div>
+      </section>
+
+      <section className="section story-teaser">
+        <div className="story-teaser-copy" data-reveal>
+          <span className="kicker"><i/> the feeling</span>
+          <h2>DOMIVKA — це про <em>“вдома”.</em></h2>
+          <p>Назва говорить сама за себе: м’яке світло, дивні милі речі на полицях, коробка з бантом і відчуття, що подарунок вибирали саме для тебе.</p>
+          <button className="under-link" onClick={() => go('story')}>читати історію бренду →</button>
+        </div>
+        <div className="story-teaser-images">
+          <figure className="clay-photo story-one"><img src="/images/croissant-heart.webp" alt="Heart croissant candle"/></figure>
+          <figure className="clay-photo story-two"><img src="/images/coconut-candle.webp" alt="Coconut candle"/></figure>
+          <div className="hand-note clay-sticker">для дому,<br/>який має<br/><b>настрій ♡</b></div>
+        </div>
+      </section>
+
+      <section className="section bestsellers">
+        <div className="section-heading section-heading--row" data-reveal>
+          <div><span className="kicker"><i/> little favourites</span><h2>Зараз хочеться <em>ось це.</em></h2></div>
+          <ClayButton onClick={() => go('shop')}>Весь каталог ↗</ClayButton>
+        </div>
+        <div className="product-grid product-grid--home">
+          {products.slice(0,4).map(p => <ProductCard key={p.id} product={p} addToCart={addToCart}/>)}
+        </div>
+      </section>
+
+      <section className="section gift-callout">
+        <div className="gift-copy" data-reveal>
+          <span className="kicker"><i/> make it personal</span>
+          <h2>Подарунок, який<br/><em>не виглядає випадковим.</em></h2>
+          <p>Підберемо свічку під людину, колір, подію або настрій. Для днів народження, подяк, “просто так” і маленьких свят.</p>
+          <ClayButton className="clay-button--cream" onClick={() => go('gifts')}>Зібрати подарунок ♡</ClayButton>
+        </div>
+        <div className="gift-photo-stack" aria-hidden="true">
+          <figure className="clay-photo"><img src="/images/donut-candles.webp" alt=""/></figure>
+          <figure className="clay-photo"><img src="/images/pink-carousel-gift.webp" alt=""/></figure>
+          <i className="gift-ribbon">⌇</i>
+        </div>
+      </section>
+
+      <section className="section social-strip">
+        <div className="section-heading section-heading--row"><div><span className="kicker"><i/> from instagram</span><h2>Живі кадри.<br/><em>Без стерильності.</em></h2></div><a className="under-link" href={IG} target="_blank" rel="noreferrer">@domivka_candles ↗</a></div>
+        <div className="social-rail">
+          {['crystal-shoes','calla-lily','pearl-shell','biscuit-candle','meringue-bloom','coconut-candle'].map(name => <figure key={name} className="clay-photo"><img src={`/images/${name}.webp`} alt="DOMIVKA Instagram candle"/></figure>)}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function ProductCard({ product, addToCart }) {
+  const photos = productImages(product);
+  return (
+    <article className="product-card">
+      <button className="product-image clay-photo" onClick={() => go(`product/${product.id}`)}>
+        <img src={photos[0]} alt={`${product.name} candle by DOMIVKA`} loading="lazy"/>
+        <span className="product-badge clay-pill">{product.badge}</span>
+        {photos.length > 1 && <span className="product-photo-count clay-pill">{photos.length} фото</span>}
+        <i className="product-open">↗</i>
+      </button>
+      <div className="product-meta">
+        <div><small>{categoryLabel(product)}</small><h3><button onClick={() => go(`product/${product.id}`)}>{product.ukName}</button></h3><p>{product.short}</p></div>
+        <strong>{money(product.price)}</strong>
+      </div>
+      <ClayButton className="product-add" onClick={() => addToCart(product)}>Додати в кошик <span>＋</span></ClayButton>
+    </article>
+  );
+}
+
+function ShopPage({ addToCart, products, categories }) {
+  const [filter, setFilter] = useState('All');
+  const [query, setQuery] = useState('');
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const c = q.get('collection');
+    if (c) setFilter(c);
+  }, []);
+  const collections = useMemo(() => ['All', ...categories], [categories]);
+  const list = useMemo(() => products.filter(p => (filter === 'All' || productCategories(p).includes(filter)) && `${p.name} ${p.ukName}`.toLowerCase().includes(query.toLowerCase())), [filter, query, products]);
+  return (
+    <>
+      <PageHero eyebrow="shop / 01" title={<>Виберіть не “товар”.<br/><em>Виберіть настрій.</em></>} copy="Тут зібрані скульптурні, морські, солодкі й подарункові форми DOMIVKA." image="/images/shell-collection.webp" />
+      <section className="section shop-section">
+        <div className="shop-toolbar clay-surface">
+          <div className="filters">{collections.map(c => <button key={c} className={filter===c?'active':''} onClick={() => setFilter(c)}>{c}</button>)}</div>
+          <label className="clay-input search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Пошук свічки"/></label>
+        </div>
+        <div className="shop-count">{String(list.length).padStart(2,'0')} objects to fall in love with</div>
+        <div className="product-grid">{list.map(p => <ProductCard key={p.id} product={p} addToCart={addToCart}/>)}</div>
+      </section>
+    </>
+  );
+}
+
+function ProductPage({ id, addToCart, products }) {
+  const product = products.find(p => p.id === id) || products[0] || DEFAULT_PRODUCTS[0];
+  const currentCategories = productCategories(product);
+  const related = products.filter(p => p.id !== product.id && productCategories(p).some(c => currentCategories.includes(c))).slice(0,3);
+  const photos = productImages(product);
+  const [qty, setQty] = useState(1);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  useEffect(() => setPhotoIndex(0), [product.id]);
+  const showPrev = () => setPhotoIndex(i => (i - 1 + photos.length) % photos.length);
+  const showNext = () => setPhotoIndex(i => (i + 1) % photos.length);
+  return (
+    <>
+      <section className="product-page section">
+        <div className="product-gallery">
+          <figure className="product-main-image clay-photo">
+            <img src={photos[photoIndex] || photos[0]} alt={`${product.name} — photo ${photoIndex + 1}`}/>
+            {photos.length > 1 && <>
+              <button className="gallery-arrow gallery-arrow--prev" type="button" onClick={showPrev} aria-label="Попереднє фото">←</button>
+              <button className="gallery-arrow gallery-arrow--next" type="button" onClick={showNext} aria-label="Наступне фото">→</button>
+              <span className="gallery-counter">{photoIndex + 1} / {photos.length}</span>
+            </>}
+          </figure>
+          {photos.length > 1 && <div className="product-thumbs" aria-label="Фото товару">{photos.map((src, index) => <button type="button" className={index === photoIndex ? 'active' : ''} key={`${src.slice(0,28)}-${index}`} onClick={() => setPhotoIndex(index)} aria-label={`Фото ${index + 1}`}><img src={src} alt=""/></button>)}</div>}
+          <div className="product-mini-note clay-sticker">made<br/>to make<br/><b>home softer</b></div>
+        </div>
+        <div className="product-info" data-reveal>
+          <button className="back-link" onClick={() => go('shop')}>← каталог</button>
+          <span className="kicker"><i/> {categoryLabel(product)} · {product.badge}</span>
+          <h1>{product.ukName}</h1>
+          <p className="latin-name">{product.name}</p>
+          <strong className="product-price">{money(product.price)}</strong>
+          <p className="product-lead">{product.story}</p>
+          <ul className="product-details">{product.details.map(x=><li key={x}><span>♡</span>{x}</li>)}</ul>
+          <div className="option-block"><label>Кількість</label><div className="qty-clay"><button onClick={()=>setQty(Math.max(1,qty-1))}>−</button><span>{qty}</span><button onClick={()=>setQty(qty+1)}>＋</button></div></div>
+          <ClayButton className="clay-button--berry product-buy" onClick={() => { for(let i=0;i<qty;i++) addToCart(product); }}>Додати · {money(product.price*qty)} <span>↗</span></ClayButton>
+          <div className="shipping-note clay-surface"><b>Маленька серія</b><p>Наявність та фінальний колір краще підтвердити перед відправкою — ручні вироби можуть трохи відрізнятися.</p></div>
+        </div>
+      </section>
+      <section className="section related"><div className="section-heading"><span className="kicker"><i/> same mood</span><h2>Може ще <em>одну?</em></h2></div><div className="product-grid">{related.length ? related.map(p=><ProductCard key={p.id} product={p} addToCart={addToCart}/>) : products.filter(p=>p.id!==product.id).slice(0,3).map(p=><ProductCard key={p.id} product={p} addToCart={addToCart}/>)}</div></section>
+    </>
+  );
+}
+
+function GiftsPage() {
+  return (
+    <>
+      <PageHero eyebrow="gifts / 02" title={<>Подарунки, які<br/><em>хочеться залишити собі.</em></>} copy="Колір, форма, настрій, листівка — зберемо маленьку історію під конкретну людину." image="/images/pink-carousel-gift.webp" />
+      <section className="section gift-options">
+        {[
+          ['01','Ready to gift','Готовий набір зі свічкою та оформленням.','/images/pink-carousel-gift.webp'],
+          ['02','Sweet box','Грайливі “їстівні” форми: пончики, печиво, круасани.','/images/donut-candles.webp'],
+          ['03','Sea mood','Мушлі, перлини, кокос — спокійна літня композиція.','/images/pearl-shell.webp'],
+        ].map(x=><article className="gift-option clay-surface" key={x[0]} data-reveal><span>{x[0]}</span><img src={x[3]} alt=""/><div><h3>{x[1]}</h3><p>{x[2]}</p></div></article>)}
+      </section>
+      <section className="section custom-gift">
+        <div data-reveal><span className="kicker"><i/> custom request</span><h2>Є конкретна людина,<br/><em>але немає ідеї?</em></h2><p>Напишіть кілька слів про неї — настрій, кольори, привід, бюджет. Ми перетворимо це на пропозицію подарунку.</p></div>
+        <form className="gift-form clay-surface" onSubmit={e=>{e.preventDefault(); const data=Object.fromEntries(new FormData(e.currentTarget)); localStorage.setItem('domivka-custom-gift',JSON.stringify(data)); go('checkout?custom=1');}}>
+          <label className="clay-input"><span>Для кого</span><input name="for" required placeholder="мама, подруга, колега…"/></label>
+          <label className="clay-input"><span>Привід</span><input name="occasion" placeholder="birthday / thank you / just because"/></label>
+          <label className="clay-input"><span>Бюджет</span><select name="budget"><option>до 800 ₴</option><option>800–1500 ₴</option><option>1500+ ₴</option></select></label>
+          <label className="clay-input clay-input--textarea"><span>Що вона/він любить?</span><textarea name="note" rows="4" placeholder="рожевий, море, minimal, funny…"/></label>
+          <ClayButton className="clay-button--berry" type="submit">Підготувати запит ↗</ClayButton>
+        </form>
+      </section>
+    </>
+  );
+}
+
+function StoryPage() {
+  return (
+    <>
+      <PageHero eyebrow="story / 03" title={<>Нехай вдома буде<br/><em>трохи дивніше. Трохи тепліше.</em></>} copy="DOMIVKA будує свій характер не навколо “luxury candle”, а навколо живих, тактильних речей, до яких хочеться торкатися." image="/images/biscuit-candle.webp" />
+      <section className="section manifesto">
+        <div className="manifesto-big" data-reveal>“Свічка може бути<br/>серйозною.<br/><em>А може бути пончиком.</em>”</div>
+        <div className="manifesto-copy" data-reveal><p>У бренді працює контраст: акуратне пакування + грайливі форми; кремова база + рожеві, карамельні й морські відтінки; домашність + маленька театральність.</p><p>Саме тому сайт теж не має бути стерильним каталогом. Він поводиться як коробка з маленькими об’єктами: щось підстрибує, щось накладається, щось хочеться “натиснути пальцем”.</p></div>
+      </section>
+      <section className="section values-grid">
+        {[
+          ['01','Warm, not beige','Теплий — не означає монотонний. DOMIVKA може бути рожевою, блакитною, карамельною й винною.'],
+          ['02','Cute, not childish','Грайливість залишається дорослою завдяки типографіці, композиції та матеріальності.'],
+          ['03','Handmade, not rustic','Ручна робота показана через деталі й живі фото, а не через кліше “craft paper everywhere”.'],
+          ['04','Giftable by default','Бант, коробка, композиція і маленький сюрприз — частина продуктового досвіду.'],
+        ].map(v=><article className="value-card clay-surface" key={v[0]} data-reveal><span>{v[0]}</span><h3>{v[1]}</h3><p>{v[2]}</p></article>)}
+      </section>
+      <section className="section image-story-grid">
+        {['croissant-heart','crystal-shoes','calla-lily','coconut-candle'].map((x,i)=><figure key={x} className={`clay-photo image-story-${i+1}`}><img src={`/images/${x}.webp`} alt="DOMIVKA brand photography"/></figure>)}
+      </section>
+    </>
+  );
+}
+
+function CarePage() {
+  return (
+    <>
+      <PageHero eyebrow="care / 04" title={<>Щоб красиво було<br/><em>не лише перші 5 хвилин.</em></>} copy="Короткий гайд: як поводитися зі свічкою, декором і ґнотом, щоб ритуал залишався приємним." image="/images/coconut-candle.webp" />
+      <section className="section care-grid">
+        {[
+          ['01','Перший вогонь','Дайте верхньому шару воску прогрітися рівномірно. Це допомагає уникати глибокого “тунелю”.'],
+          ['02','Коротший ґніт','Перед наступним запалюванням приберіть зайву обвуглену частину ґноту. Полум’я буде спокійнішим.'],
+          ['03','Без протягів','Не ставте свічку біля відкритого вікна, вентилятора або на нестійку поверхню.'],
+          ['04','Скульптурні форми','Декоративні свічки краще ставити на жаростійку тарілку: форма може плавитися нерівномірно — це частина її характеру.'],
+          ['05','Не залишайте саму','Ніколи не залишайте запалену свічку без нагляду та тримайте подалі від дітей і тварин.'],
+          ['06','Після свічки','Красиву ємність можна очистити й використати як маленьку вазу, підставку або контейнер.'],
+        ].map(c=><article className="care-card clay-surface" key={c[0]} data-reveal><span>{c[0]}</span><h3>{c[1]}</h3><p>{c[2]}</p></article>)}
+      </section>
+      <section className="section material-note"><div className="clay-surface" data-reveal><span className="kicker"><i/> materials</span><h2>Матеріал — це частина історії.</h2><p>Для production-версії біля кожного SKU варто показати точний тип воску, ґніт, аромат і рекомендації саме для цієї форми. У демо ці дані навмисно не вигадані.</p></div></section>
+    </>
+  );
+}
+
+function PageHero({ eyebrow, title, copy, image }) {
+  return (
+    <section className="page-hero">
+      <div data-reveal><span className="kicker"><i/> {eyebrow}</span><h1>{title}</h1><p>{copy}</p></div>
+      <figure className="clay-photo" data-reveal><img src={image} alt="DOMIVKA candle"/></figure>
+    </section>
+  );
+}
+
+function CheckoutPage({ cart, subtotal, clearCart }) {
+  const [done, setDone] = useState(null);
+  const [promoInput, setPromoInput] = useState('');
+  const [promo, setPromo] = useState(null);
+  const [promoMessage, setPromoMessage] = useState('');
+  const custom = new URLSearchParams(window.location.hash.split('?')[1] || '').get('custom') === '1';
+  const customData = (() => { try { return JSON.parse(localStorage.getItem('domivka-custom-gift')||'null'); } catch { return null; }})();
+  const discount = promo?.type === 'percent' ? Math.round(subtotal * promo.value / 100) : 0;
+  const discountedSubtotal = Math.max(0, subtotal - discount);
+  const shipping = discountedSubtotal >= 2000 || discountedSubtotal === 0 ? 0 : 120;
+  const total = discountedSubtotal + shipping;
+
+  const applyPromo = () => {
+    const code = promoInput.trim().toUpperCase();
+    const found = PROMO_CODES[code];
+    if (!found) {
+      setPromo(null);
+      setPromoMessage('Промокод не знайдено. Перевірте написання.');
+      return;
+    }
+    setPromo({ code, ...found });
+    setPromoInput(code);
+    setPromoMessage(`Промокод ${code} застосовано · ${found.label}`);
+  };
+
+  const makeSummary = (order, customer) => {
+    const lines = cart.map(i => `${i.qty}× ${i.ukName} — ${money(i.price*i.qty)}`).join('\n');
+    return `DOMIVKA · ${order}\n${lines || 'Custom gift request'}\n${promo?`Промокод: ${promo.code} (${promo.label})\nЗнижка: -${money(discount)}\n`:''}${subtotal?`Разом: ${money(total)}`:''}\nІм’я: ${customer.name}\nТелефон: ${customer.phone}\nМісто: ${customer.city || '-'}\nДоставка / відділення: ${customer.deliveryMethod || '-'}\nКоментар: ${customer.note || '-'}${customData?`\nGift brief: ${JSON.stringify(customData)}`:''}`;
+  };
+  const submit = async e => {
+    e.preventDefault();
+    const customer = Object.fromEntries(new FormData(e.currentTarget).entries());
+    const orderNumber = `DMV-${String(Date.now()).slice(-6)}`;
+    const payload = { orderNumber, customer, items: cart.map(x=>({id:x.id,name:x.ukName,price:x.price,qty:x.qty})), customGift: customData, promo: promo ? { code: promo.code, label: promo.label, discount } : null, subtotal, discount, shipping, total, createdAt:new Date().toISOString() };
+    const endpoint = import.meta.env.VITE_ORDER_ENDPOINT;
+    if (endpoint) {
+      try { await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); } catch (err) { console.error(err); }
+    }
+    const prev = JSON.parse(localStorage.getItem('domivka-orders')||'[]');
+    localStorage.setItem('domivka-orders',JSON.stringify([payload,...prev]));
+    const summary = makeSummary(orderNumber, customer);
+    clearCart();
+    setDone({ orderNumber, summary });
+  };
+  if (done) return <section className="checkout-success section"><div className="success-card clay-surface"><span className="success-heart">♡</span><small>order prepared</small><h1>Дякуємо.<br/><em>Тепер — до деталей.</em></h1><p>Номер запиту: <b>{done.orderNumber}</b>. У демо-версії замовлення збережене локально. Для реального магазину підключіть webhook у <code>VITE_ORDER_ENDPOINT</code>.</p><div className="success-actions"><ClayButton className="clay-button--berry" onClick={async()=>{try{await navigator.clipboard.writeText(done.summary);}catch{} window.open(IG,'_blank');}}>Скопіювати замовлення + Instagram ↗</ClayButton><button className="under-link" onClick={()=>go('shop')}>продовжити дивитися</button></div></div></section>;
+  return (
+    <section className="checkout-page section">
+      <div className="checkout-copy"><span className="kicker"><i/> checkout</span><h1>{custom ? <>Розкажіть, кому<br/><em>готуємо подарунок.</em></> : <>Майже вдома.<br/><em>Залишилися деталі.</em></>}</h1><p>Заповніть контакти. Після заявки з вами можна підтвердити наявність, відтінок, доставку та фінальну суму.</p></div>
+      <form className="checkout-form clay-surface" onSubmit={submit}>
+        <div className="checkout-form-head"><span>Ваші дані</span><b>{cart.reduce((n,x)=>n+x.qty,0)} items</b></div>
+        <div className="form-grid">
+          <label className="clay-input"><span>Ім’я *</span><input name="name" required placeholder="Ваше ім’я"/></label>
+          <label className="clay-input"><span>Телефон *</span><input name="phone" required placeholder="+380…"/></label>
+          <label className="clay-input full"><span>Instagram / email</span><input name="contact" placeholder="@username або email"/></label>
+          <label className="clay-input"><span>Місто *</span><input name="city" required placeholder="Київ"/></label>
+          <label className="clay-input"><span>Спосіб доставки / відділення *</span><input name="deliveryMethod" required placeholder="Нова пошта · відділення №…"/></label>
+          <label className="clay-input clay-input--textarea full"><span>Коментар</span><textarea name="note" rows="4" placeholder="Колір, дата, листівка, побажання…"/></label>
+        </div>
+        {!custom && <>
+          <div className="promo-block">
+            <div className="promo-row">
+              <label className="clay-input promo-input"><span>Промокод</span><input value={promoInput} onChange={e=>{setPromoInput(e.target.value);setPromoMessage('')}} placeholder="Наприклад, DOMIVKA10"/></label>
+              <ClayButton className="promo-apply" onClick={applyPromo}>Застосувати</ClayButton>
+            </div>
+            {promoMessage && <p className={`promo-message ${promo ? 'success' : 'error'}`}>{promoMessage}</p>}
+          </div>
+          <div className="order-summary"><div>{cart.map(i=><p key={i.id}><span>{i.qty}× {i.ukName}</span><b>{money(i.price*i.qty)}</b></p>)}</div>{promo&&<p className="discount-line"><span>Промокод {promo.code}</span><b>− {money(discount)}</b></p>}<p><span>Доставка</span><b>{shipping ? money(shipping) : '0 ₴'}</b></p><strong><span>Разом</span><b>{money(total)}</b></strong></div>
+        </>}
+        <ClayButton className="clay-button--berry submit-order" type="submit">Надіслати замовлення <span>↗</span></ClayButton>
+        <small className="form-note">Натискаючи кнопку, ви створюєте заявку. Оплата та остаточне підтвердження можуть бути підключені окремим checkout-провайдером.</small>
+      </form>
+    </section>
+  );
+}
+
+function CartDrawer({ open, onClose, cart, updateQty, subtotal }) {
+  const shipping = subtotal >= 2000 || subtotal === 0 ? 0 : 120;
+  return <div className={`cart-shell ${open?'open':''}`}><button className="cart-backdrop" onClick={onClose} aria-label="Close cart"/><aside className="cart-panel clay-surface">
+    <div className="cart-head"><div><small>your little collection</small><h2>Кошик ♡</h2></div><button onClick={onClose}>×</button></div>
+    <div className="cart-list">{cart.length ? cart.map(i=><article className="cart-item" key={i.id}><img src={primaryImage(i)} alt=""/><div><h3>{i.ukName}</h3><small>{money(i.price)}</small><div className="qty-clay qty-clay--small"><button onClick={()=>updateQty(i.id,-1)}>−</button><span>{i.qty}</span><button onClick={()=>updateQty(i.id,1)}>＋</button></div></div><b>{money(i.price*i.qty)}</b></article>) : <div className="empty"><span>♡</span><h3>Поки порожньо.</h3><p>Додайте щось тепле.</p><button className="under-link" onClick={()=>{onClose();go('shop')}}>до каталогу →</button></div>}</div>
+    {cart.length>0 && <div className="cart-bottom"><p><span>Товари</span><b>{money(subtotal)}</b></p><p><span>Орієнтовна доставка</span><b>{shipping?money(shipping):'free'}</b></p><strong><span>Разом</span><b>{money(subtotal+shipping)}</b></strong><ClayButton className="clay-button--berry" onClick={()=>{onClose();go('checkout')}}>Оформити ↗</ClayButton><small>Безкоштовна доставка від 2 000 ₴ · demo rule</small></div>}
+  </aside></div>;
+}
+
+function AdminLogin({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const submit = async e => {
+    e.preventDefault();
+    setError('');
+    const result = await onLogin(email.trim(), password);
+    if (!result.ok) setError(result.message || 'Невірний email або пароль.');
+  };
+  return <section className="admin-login section"><form className="admin-login-card clay-surface" onSubmit={submit}><Brand/><span className="kicker"><i/> admin access</span><h1>Керування<br/><em>каталогом.</em></h1><p>Авторизуйтеся, щоб додавати, редагувати або видаляти позиції каталогу.</p><label className="clay-input"><span>Email</span><input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@domivka…"/></label><label className="clay-input"><span>Пароль</span><input type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"/></label>{error&&<p className="admin-error">{error}</p>}<ClayButton className="clay-button--berry" type="submit">Увійти ↗</ClayButton><small>Для production підключіть серверний API. Локальний режим зберігає каталог лише у цьому браузері.</small></form></section>;
+}
+
+function ProductEditor({ product, categories, onSave, onCancel }) {
+  const empty = { id:'', name:'', ukName:'', price:'', image:'', images:[], collection:'', categories:[], badge:'', short:'', story:'', details:[] };
+  const initial = product ? normalizeProduct(product) : empty;
+  const [form, setForm] = useState({...initial, images:[...productImages(initial)], details:[...(initial.details||[])]});
+  const [imageUrl, setImageUrl] = useState('');
+  const [busy, setBusy] = useState(false);
+  const set = (key, value) => setForm(v => ({...v,[key]:value}));
+  const toggleCategory = name => setForm(v => {
+    const current = productCategories(v);
+    const next = current.includes(name) ? current.filter(x => x !== name) : [...current, name];
+    return {...v, categories:next, collection:next[0] || ''};
+  });
+  const setImages = updater => setForm(v => {
+    const next = typeof updater === 'function' ? updater(productImages(v)) : updater;
+    const images = [...new Set((next || []).map(x=>String(x||'').trim()).filter(Boolean))];
+    return {...v, images, image:images[0] || ''};
+  });
+  const addImageUrl = () => {
+    const url = imageUrl.trim();
+    if (!url) return;
+    setImages(images => [...images, url]);
+    setImageUrl('');
+  };
+  const handleImages = async e => {
+    const files = [...(e.target.files || [])];
+    if (!files.length) return;
+    const loaded = await Promise.all(files.map(file => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    })));
+    setImages(images => [...images, ...loaded]);
+    e.target.value = '';
+  };
+  const removeImage = index => setImages(images => images.filter((_,i)=>i!==index));
+  const makePrimary = index => setImages(images => {
+    const next = [...images];
+    const [picked] = next.splice(index,1);
+    return [picked,...next];
+  });
+  const submit = async e => {
+    e.preventDefault();
+    setBusy(true);
+    const images = productImages(form);
+    if (!images.length) {
+      setBusy(false);
+      window.alert('Додайте хоча б одне фото товару.');
+      return;
+    }
+    const selectedCategories = productCategories(form);
+    if (!selectedCategories.length) {
+      setBusy(false);
+      window.alert('Оберіть хоча б одну категорію товару.');
+      return;
+    }
+    const prepared = normalizeProduct({
+      ...form,
+      image: images[0],
+      images,
+      categories:selectedCategories,
+      collection:selectedCategories[0] || '',
+      id: form.id || slugify(form.ukName || form.name),
+      details: Array.isArray(form.details) ? form.details : String(form.details||'').split('\n').map(x=>x.trim()).filter(Boolean),
+    });
+    const result = await onSave(prepared, product?.id || null);
+    setBusy(false);
+    if (result?.ok !== false) onCancel();
+  };
+  const photos = productImages(form);
+  return <form className="product-editor clay-surface" onSubmit={submit}>
+    <div className="editor-head"><div><small>{product ? 'EDIT ITEM' : 'NEW ITEM'}</small><h2>{product ? product.ukName : 'Нова позиція'}</h2></div><button type="button" onClick={onCancel}>×</button></div>
+    <div className="editor-section-label">Outer card · каталог</div>
+    <div className="editor-grid">
+      <label className="clay-input"><span>Назва UA *</span><input required value={form.ukName} onChange={e=>set('ukName',e.target.value)} placeholder="Рожева карусель"/></label>
+      <label className="clay-input"><span>Назва EN *</span><input required value={form.name} onChange={e=>set('name',e.target.value)} placeholder="Pink Carousel"/></label>
+      <label className="clay-input"><span>Slug / ID</span><input value={form.id} onChange={e=>set('id',slugify(e.target.value))} placeholder="pink-carousel"/></label>
+      <label className="clay-input"><span>Ціна ₴ *</span><input required type="number" min="0" value={form.price} onChange={e=>set('price',e.target.value)} placeholder="820"/></label>
+      <fieldset className="category-checklist clay-input full"><legend>Категорії * · можна обрати декілька</legend><div className="category-checkbox-grid">{categories.map(name => <label className={`category-check ${productCategories(form).includes(name)?'checked':''}`} key={name}><input type="checkbox" checked={productCategories(form).includes(name)} onChange={()=>toggleCategory(name)}/><span className="category-box">✓</span><b>{name}</b></label>)}</div>{!categories.length&&<small>Спочатку додайте категорію у блоці керування категоріями нижче.</small>}</fieldset>
+      <label className="clay-input"><span>Badge</span><input value={form.badge} onChange={e=>set('badge',e.target.value)} placeholder="gift-ready"/></label>
+      <label className="clay-input full"><span>Короткий опис · 2 lines *</span><textarea required rows="2" value={form.short} onChange={e=>set('short',e.target.value)} placeholder="Опис, який видно у каталозі"/></label>
+    </div>
+    <div className="editor-section-label">Фото товару · можна декілька</div>
+    <div className="editor-multiphoto">
+      <div className="editor-photo-grid">
+        {photos.length ? photos.map((src,index)=><figure className={`editor-photo-item clay-photo ${index===0?'is-primary':''}`} key={`${src.slice(0,32)}-${index}`}>
+          <img src={src} alt={`preview ${index+1}`}/>
+          {index===0 && <span className="primary-photo-label">Головне</span>}
+          <div className="editor-photo-actions">
+            {index!==0 && <button type="button" onClick={()=>makePrimary(index)}>Зробити головним</button>}
+            <button type="button" className="danger" onClick={()=>removeImage(index)}>×</button>
+          </div>
+        </figure>) : <div className="editor-empty-photos clay-surface">Додайте перше фото ♡</div>}
+      </div>
+      <div className="editor-media-fields">
+        <div className="image-url-row"><label className="clay-input"><span>Image URL / path</span><input value={imageUrl} onChange={e=>setImageUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addImageUrl()}}} placeholder="/images/candle-02.webp"/></label><button type="button" className="photo-add-url" onClick={addImageUrl}>＋ Додати URL</button></div>
+        <label className="file-clay"><span>Завантажити фото · multiple</span><input type="file" accept="image/*" multiple onChange={handleImages}/></label>
+        <small>Перше фото використовується в каталозі та кошику. На сторінці товару всі додані фото автоматично відображаються як галерея. Для production краще зберігати файли у storage/CDN; локальне завантаження працює як data URL.</small>
+      </div>
+    </div>
+    <div className="editor-section-label">Inner card · сторінка товару</div>
+    <div className="editor-grid">
+      <label className="clay-input clay-input--textarea full"><span>Повний опис *</span><textarea required rows="4" value={form.story} onChange={e=>set('story',e.target.value)} placeholder="Історія / опис товару на inner page"/></label>
+      <label className="clay-input clay-input--textarea full"><span>Характеристики · одна на рядок</span><textarea rows="5" value={Array.isArray(form.details)?form.details.join('\n'):form.details} onChange={e=>set('details',e.target.value.split('\n'))} placeholder={'ручне оформлення\nподарункова подача\nмаленька серія'}/></label>
+    </div>
+    <div className="editor-actions"><button type="button" className="under-link" onClick={onCancel}>Скасувати</button><ClayButton className="clay-button--berry" type="submit" disabled={busy}>{busy?'Збереження…':'Зберегти позицію ↗'}</ClayButton></div>
+  </form>;
+}
+
+function AdminPage({ products, categories, adminAuthed, onLogin, onLogout, onSaveProduct, onDeleteProduct, onResetProducts, onAddCategory, onRenameCategory, onDeleteCategory }) {
+  const [editing, setEditing] = useState(null);
+  const [creating, setCreating] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [newCategory, setNewCategory] = useState('');
+  const [editingCategory, setEditingCategory] = useState('');
+  const [editingCategoryValue, setEditingCategoryValue] = useState('');
+  if (!adminAuthed) return <AdminLogin onLogin={onLogin}/>;
+  const save = async (product, originalId) => {
+    const result = await onSaveProduct(product, originalId);
+    setNotice(result.ok === false ? result.message : 'Позицію збережено ♡');
+    setTimeout(()=>setNotice(''),1800);
+    return result;
+  };
+  const remove = async product => {
+    if (!window.confirm(`Видалити “${product.ukName}”?`)) return;
+    const result = await onDeleteProduct(product.id);
+    setNotice(result.ok === false ? result.message : 'Позицію видалено.');
+    setTimeout(()=>setNotice(''),1800);
+  };
+  const addCategory = async () => {
+    const name = newCategory.trim();
+    if (!name) return;
+    const result = await onAddCategory(name);
+    setNotice(result.ok === false ? result.message : 'Категорію додано ♡');
+    if (result.ok !== false) setNewCategory('');
+    setTimeout(()=>setNotice(''),1800);
+  };
+  const saveCategoryName = async oldName => {
+    const name = editingCategoryValue.trim();
+    if (!name || name === oldName) { setEditingCategory(''); return; }
+    const result = await onRenameCategory(oldName, name);
+    setNotice(result.ok === false ? result.message : 'Категорію оновлено.');
+    if (result.ok !== false) { setEditingCategory(''); setEditingCategoryValue(''); }
+    setTimeout(()=>setNotice(''),1800);
+  };
+  const removeCategory = async name => {
+    const used = products.filter(p=>productCategories(p).includes(name)).length;
+    if (!window.confirm(used ? `Категорія “${name}” використовується у ${used} товарах. Видалити її та прибрати з цих товарів?` : `Видалити категорію “${name}”?`)) return;
+    const result = await onDeleteCategory(name);
+    setNotice(result.ok === false ? result.message : 'Категорію видалено.');
+    setTimeout(()=>setNotice(''),1800);
+  };
+  return <section className="admin-page section">
+    <div className="admin-top"><div><span className="kicker"><i/> DOMIVKA CMS</span><h1>Каталог<br/><em>без коду.</em></h1><p>Усі поля зовнішньої картки каталогу та внутрішньої сторінки товару редагуються тут.</p></div><div className="admin-top-actions"><ClayButton className="clay-button--berry" onClick={()=>{setCreating(true);setEditing(null)}}>＋ Додати item</ClayButton><button className="under-link" onClick={onLogout}>Вийти</button></div></div>
+    {(creating||editing)&&<ProductEditor key={editing?.id || 'new-product'} product={editing} categories={categories} onSave={save} onCancel={()=>{setCreating(false);setEditing(null)}}/>}
+    <section className="category-manager clay-surface">
+      <div className="category-manager-head"><div><small>CATALOG TAXONOMY</small><h2>Категорії</h2><p>Додавайте, перейменовуйте або видаляйте категорії. Один товар може бути одночасно у декількох категоріях.</p></div><span>{categories.length} categories</span></div>
+      <div className="category-create-row"><label className="clay-input"><span>Нова категорія</span><input value={newCategory} onChange={e=>setNewCategory(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addCategory()}}} placeholder="Наприклад: Wedding"/></label><button type="button" onClick={addCategory}>＋ Додати</button></div>
+      <div className="category-list">{categories.map(name => <article className="category-admin-item" key={name}>
+        {editingCategory===name ? <><input autoFocus value={editingCategoryValue} onChange={e=>setEditingCategoryValue(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')saveCategoryName(name);if(e.key==='Escape')setEditingCategory('')}}/><div className="category-admin-actions"><button onClick={()=>saveCategoryName(name)}>Зберегти</button><button onClick={()=>setEditingCategory('')}>Скасувати</button></div></> : <><div><b>{name}</b><small>{products.filter(p=>productCategories(p).includes(name)).length} товарів</small></div><div className="category-admin-actions"><button onClick={()=>{setEditingCategory(name);setEditingCategoryValue(name)}}>Редагувати</button><button className="danger" onClick={()=>removeCategory(name)}>Видалити</button></div></>}
+      </article>)}</div>
+    </section>
+    <div className="admin-list-head"><span>{products.length} items</span><button className="admin-reset" onClick={()=>{if(window.confirm('Повернути початковий каталог?')) onResetProducts()}}>Reset demo catalogue</button></div>
+    <div className="admin-products">{products.map(p=><article className="admin-product clay-surface" key={p.id}><img src={primaryImage(p)} alt=""/><div className="admin-product-copy"><small>{categoryLabel(p)} · {p.badge}</small><h3>{p.ukName}</h3><p>{p.short}</p></div><strong>{money(p.price)}</strong><div className="admin-item-actions"><button onClick={()=>{setEditing(p);setCreating(false);window.scrollTo({top:0,behavior:'smooth'})}}>Редагувати</button><button className="danger" onClick={()=>remove(p)}>Видалити</button></div></article>)}</div>
+    {notice&&<div className="toast clay-surface">{notice}</div>}
+  </section>;
+}
+
+function Footer() {
+  return <footer className="site-footer"><div className="footer-top"><Brand/><div><small>SHOP</small><button onClick={()=>go('shop')}>Каталог</button><button onClick={()=>go('gifts')}>Подарунки</button><button onClick={()=>go('care')}>Догляд</button></div><div><small>DOMIVKA</small><button onClick={()=>go('story')}>Історія</button><a href={IG} target="_blank" rel="noreferrer">Instagram ↗</a></div><div className="footer-note clay-surface"><b>Нагадування:</b><p>погані дні теж можна підсвітити красивою свічкою.</p><span>♡</span></div></div><div className="footer-bottom"><span>© 2026 DOMIVKA</span><span>made to feel like home</span><span>UA · handmade candle studio</span><button className="footer-admin" onClick={()=>go('admin')}>Admin</button></div></footer>;
+}
+
+function App() {
+  const route = useRoute();
+  const [cart, setCart] = useState(()=>{try{return JSON.parse(localStorage.getItem('domivka-cart-v2'))||[]}catch{return[]}});
+  const [products, setProducts] = useState(()=>{try{const saved=JSON.parse(localStorage.getItem('domivka-products-v1'));return (saved||DEFAULT_PRODUCTS).map(normalizeProduct)}catch{return DEFAULT_PRODUCTS.map(normalizeProduct)}});
+  const [categories, setCategories] = useState(()=>{try{const saved=JSON.parse(localStorage.getItem('domivka-categories-v1'));if(Array.isArray(saved))return saved;const oldProducts=JSON.parse(localStorage.getItem('domivka-products-v1'))||[];return [...new Set([...DEFAULT_CATEGORIES,...oldProducts.flatMap(productCategories)])]}catch{return DEFAULT_CATEGORIES}});
+  const [adminAuthed, setAdminAuthed] = useState(()=>localStorage.getItem('domivka-admin-auth') === '1' || Boolean(localStorage.getItem('domivka-admin-token')));
+  const [cartOpen, setCartOpen] = useState(false);
+  const [toast, setToast] = useState('');
+  useReveal(`${route.page}/${route.param || ''}`);
+
+  useEffect(()=>localStorage.setItem('domivka-cart-v2',JSON.stringify(cart)),[cart]);
+  useEffect(()=>{ if (!CATALOG_API) localStorage.setItem('domivka-products-v1',JSON.stringify(products)); },[products]);
+  useEffect(()=>{ if (!CATALOG_API) localStorage.setItem('domivka-categories-v1',JSON.stringify(categories)); },[categories]);
+  useEffect(()=>{document.title = route.page==='home' ? 'DOMIVKA — candles that feel like home' : `DOMIVKA — ${route.page}`;},[route.page]);
+  useEffect(()=>{
+    if (!CATALOG_API) return;
+    Promise.all([
+      fetch(`${CATALOG_API}/products`).then(r=>r.ok?r.json():Promise.reject()),
+      fetch(`${CATALOG_API}/categories`).then(r=>r.ok?r.json():Promise.reject()),
+    ]).then(([productData,categoryData])=>{
+      if(Array.isArray(productData)) setProducts(productData.map(normalizeProduct));
+      if(Array.isArray(categoryData)) setCategories(categoryData.map(String).filter(Boolean));
+    }).catch(()=>{});
+  },[]);
+
+  const apiToken = () => localStorage.getItem('domivka-admin-token') || '';
+  const loginAdmin = async (email, password) => {
+    if (CATALOG_API) {
+      try {
+        const r = await fetch(`${CATALOG_API}/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+        const data = await r.json().catch(()=>({}));
+        if (!r.ok || !data.token) return {ok:false,message:data.message||'Не вдалося авторизуватися.'};
+        localStorage.setItem('domivka-admin-token',data.token); setAdminAuthed(true); return {ok:true};
+      } catch { return {ok:false,message:'API недоступний. Перевірте VITE_CATALOG_API_URL.'}; }
+    }
+    if (email === LOCAL_ADMIN_EMAIL && password === LOCAL_ADMIN_PASSWORD) {
+      localStorage.setItem('domivka-admin-auth','1'); setAdminAuthed(true); return {ok:true};
+    }
+    return {ok:false,message:'Невірний email або пароль.'};
+  };
+  const logoutAdmin = () => {localStorage.removeItem('domivka-admin-auth');localStorage.removeItem('domivka-admin-token');setAdminAuthed(false);};
+  const saveProduct = async (product, originalId) => {
+    const item = normalizeProduct(product);
+    if (!item.id || !item.ukName || !productImages(item).length || !productCategories(item).length) return {ok:false,message:'Заповніть обов’язкові поля, оберіть категорію та додайте хоча б одне фото.'};
+    if (CATALOG_API) {
+      try {
+        const method = originalId ? 'PUT' : 'POST';
+        const url = originalId ? `${CATALOG_API}/products/${encodeURIComponent(originalId)}` : `${CATALOG_API}/products`;
+        const r = await fetch(url,{method,headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiToken()}`},body:JSON.stringify(item)});
+        const data = await r.json().catch(()=>({}));
+        if (!r.ok) return {ok:false,message:data.message||'Не вдалося зберегти.'};
+        setProducts(prev=>originalId?prev.map(x=>x.id===originalId?item:x):[item,...prev]); return {ok:true};
+      } catch { return {ok:false,message:'Помилка з’єднання з catalog API.'}; }
+    }
+    setProducts(prev=>{
+      if (originalId) return prev.map(x=>x.id===originalId?item:x);
+      if (prev.some(x=>x.id===item.id)) return prev;
+      return [item,...prev];
+    });
+    return {ok:true};
+  };
+  const deleteProduct = async id => {
+    if (CATALOG_API) {
+      try {
+        const r = await fetch(`${CATALOG_API}/products/${encodeURIComponent(id)}`,{method:'DELETE',headers:{'Authorization':`Bearer ${apiToken()}`}});
+        const data = await r.json().catch(()=>({}));
+        if (!r.ok) return {ok:false,message:data.message||'Не вдалося видалити.'};
+      } catch { return {ok:false,message:'Помилка з’єднання з catalog API.'}; }
+    }
+    setProducts(prev=>prev.filter(x=>x.id!==id));
+    setCart(prev=>prev.filter(x=>x.id!==id));
+    return {ok:true};
+  };
+  const addCategory = async name => {
+    const value = String(name || '').trim();
+    if (!value) return {ok:false,message:'Вкажіть назву категорії.'};
+    if (categories.some(x=>x.toLowerCase()===value.toLowerCase())) return {ok:false,message:'Така категорія вже існує.'};
+    if (CATALOG_API) {
+      try {
+        const r=await fetch(`${CATALOG_API}/categories`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiToken()}`},body:JSON.stringify({name:value})});
+        const data=await r.json().catch(()=>({}));
+        if(!r.ok)return {ok:false,message:data.message||'Не вдалося додати категорію.'};
+      } catch {return {ok:false,message:'Помилка з’єднання з catalog API.'};}
+    }
+    setCategories(prev=>[...prev,value]);
+    return {ok:true};
+  };
+  const renameCategory = async (oldName,newName) => {
+    const value=String(newName||'').trim();
+    if(!value)return {ok:false,message:'Назва не може бути порожньою.'};
+    if(categories.some(x=>x!==oldName&&x.toLowerCase()===value.toLowerCase()))return {ok:false,message:'Така категорія вже існує.'};
+    if(CATALOG_API){
+      try{const r=await fetch(`${CATALOG_API}/categories/${encodeURIComponent(oldName)}`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiToken()}`},body:JSON.stringify({name:value})});const data=await r.json().catch(()=>({}));if(!r.ok)return {ok:false,message:data.message||'Не вдалося оновити категорію.'};}
+      catch{return {ok:false,message:'Помилка з’єднання з catalog API.'};}
+    }
+    setCategories(prev=>prev.map(x=>x===oldName?value:x));
+    setProducts(prev=>prev.map(p=>normalizeProduct({...p,categories:productCategories(p).map(x=>x===oldName?value:x),collection:productCategories(p).map(x=>x===oldName?value:x)[0]||''})));
+    return {ok:true};
+  };
+  const deleteCategory = async name => {
+    if(CATALOG_API){
+      try{const r=await fetch(`${CATALOG_API}/categories/${encodeURIComponent(name)}`,{method:'DELETE',headers:{'Authorization':`Bearer ${apiToken()}`}});const data=await r.json().catch(()=>({}));if(!r.ok)return {ok:false,message:data.message||'Не вдалося видалити категорію.'};}
+      catch{return {ok:false,message:'Помилка з’єднання з catalog API.'};}
+    }
+    setCategories(prev=>prev.filter(x=>x!==name));
+    setProducts(prev=>prev.map(p=>{const next=productCategories(p).filter(x=>x!==name);return normalizeProduct({...p,categories:next,collection:next[0]||''})}));
+    return {ok:true};
+  };
+  const resetProducts = () => {setProducts(DEFAULT_PRODUCTS.map(normalizeProduct)); if(!CATALOG_API)localStorage.setItem('domivka-products-v1',JSON.stringify(DEFAULT_PRODUCTS.map(normalizeProduct)));};
+
+  const addToCart = product => {
+    setCart(prev=>{const found=prev.find(x=>x.id===product.id);return found?prev.map(x=>x.id===product.id?{...x,qty:x.qty+1}:x):[...prev,{...product,qty:1}]});
+    setToast(`${product.ukName} — у кошику ♡`); setTimeout(()=>setToast(''),1600);
+  };
+  const updateQty=(id,d)=>setCart(prev=>prev.map(x=>x.id===id?{...x,qty:x.qty+d}:x).filter(x=>x.qty>0));
+  const count=cart.reduce((n,x)=>n+x.qty,0); const subtotal=cart.reduce((s,x)=>s+x.price*x.qty,0);
+  let page;
+  if(route.page==='shop') page=<ShopPage addToCart={addToCart} products={products} categories={categories}/>;
+  else if(route.page==='product') page=<ProductPage id={route.param} addToCart={addToCart} products={products}/>;
+  else if(route.page==='gifts') page=<GiftsPage/>;
+  else if(route.page==='story') page=<StoryPage/>;
+  else if(route.page==='care') page=<CarePage/>;
+  else if(route.page==='checkout') page=<CheckoutPage cart={cart} subtotal={subtotal} clearCart={()=>setCart([])}/>;
+  else if(route.page==='admin') page=<AdminPage products={products} categories={categories} adminAuthed={adminAuthed} onLogin={loginAdmin} onLogout={logoutAdmin} onSaveProduct={saveProduct} onDeleteProduct={deleteProduct} onResetProducts={resetProducts} onAddCategory={addCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory}/>;
+  else page=<HomePage addToCart={addToCart} products={products}/>;
+  const isAdmin = route.page === 'admin';
+  return <div className="app"><BackgroundLayers/>{!isAdmin&&<Header cartCount={count} onCart={()=>setCartOpen(true)}/>}<main>{page}</main>{!isAdmin&&<Footer/>}{!isAdmin&&<CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)} cart={cart} updateQty={updateQty} subtotal={subtotal}/>} {toast&&<div className="toast clay-surface">{toast}</div>}</div>;
+}
+
+
+createRoot(document.getElementById('root')).render(<App/>);
