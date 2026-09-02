@@ -134,6 +134,13 @@ const PROMO_CODES = {
   DOMIVKA10: { type: 'percent', value: 10, label: '-10%' },
   HOME15: { type: 'percent', value: 15, label: '-15%' },
 };
+const ORDER_STATUSES = [
+  { value:'new', label:'Нове', short:'Нове' },
+  { value:'seen', label:'Побачене', short:'Побачене' },
+  { value:'in_progress', label:'В процесі виконання', short:'В процесі' },
+  { value:'delivery', label:'Доставка', short:'Доставка' },
+];
+const orderStatusLabel = value => ORDER_STATUSES.find(item=>item.value===value)?.label || 'Нове';
 const CATALOG_API = (import.meta.env.VITE_CATALOG_API_URL || '').replace(/\/$/, '');
 const LOCAL_ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@domivka.local';
 const LOCAL_ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'domivka2026';
@@ -547,6 +554,8 @@ function CheckoutPage({ cart, subtotal, clearCart }) {
   const [promoInput, setPromoInput] = useState('');
   const [promo, setPromo] = useState(null);
   const [promoMessage, setPromoMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const custom = new URLSearchParams(window.location.hash.split('?')[1] || '').get('custom') === '1';
   const customData = (() => { try { return JSON.parse(localStorage.getItem('domivka-custom-gift')||'null'); } catch { return null; }})();
   const discount = promo?.type === 'percent' ? Math.round(subtotal * promo.value / 100) : 0;
@@ -573,20 +582,35 @@ function CheckoutPage({ cart, subtotal, clearCart }) {
   };
   const submit = async e => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitError('');
+    setSubmitting(true);
     const customer = Object.fromEntries(new FormData(e.currentTarget).entries());
     const orderNumber = `DMV-${String(Date.now()).slice(-6)}`;
-    const payload = { orderNumber, customer, items: cart.map(x=>({id:x.id,name:x.ukName,price:x.price,qty:x.qty})), customGift: customData, promo: promo ? { code: promo.code, label: promo.label, discount } : null, subtotal, discount, shipping, total, createdAt:new Date().toISOString() };
-    const endpoint = import.meta.env.VITE_ORDER_ENDPOINT;
-    if (endpoint) {
-      try { await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); } catch (err) { console.error(err); }
+    const payload = { orderNumber, customer, items: cart.map(x=>({id:x.id,name:x.ukName,price:x.price,qty:x.qty})), customGift: customData, promo: promo ? { code: promo.code, label: promo.label, discount } : null, subtotal, discount, shipping, total, status:'new', createdAt:new Date().toISOString() };
+    try {
+      if (CATALOG_API) {
+        const response = await fetch(`${CATALOG_API}/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data = await response.json().catch(()=>({}));
+        if (!response.ok) throw new Error(data.message || 'Не вдалося зберегти замовлення.');
+      } else {
+        const prev = JSON.parse(localStorage.getItem('domivka-orders')||'[]');
+        localStorage.setItem('domivka-orders',JSON.stringify([{...payload,openedAt:null,updatedAt:payload.createdAt},...prev]));
+      }
+      const endpoint = import.meta.env.VITE_ORDER_ENDPOINT;
+      if (endpoint) {
+        try { await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); } catch (err) { console.error('Make.com webhook error',err); }
+      }
+      const summary = makeSummary(orderNumber, customer);
+      clearCart();
+      setDone({ orderNumber, summary });
+    } catch (err) {
+      setSubmitError(err.message || 'Не вдалося створити замовлення. Спробуйте ще раз.');
+    } finally {
+      setSubmitting(false);
     }
-    const prev = JSON.parse(localStorage.getItem('domivka-orders')||'[]');
-    localStorage.setItem('domivka-orders',JSON.stringify([payload,...prev]));
-    const summary = makeSummary(orderNumber, customer);
-    clearCart();
-    setDone({ orderNumber, summary });
   };
-  if (done) return <section className="checkout-success section"><div className="success-card clay-surface"><span className="success-heart">♡</span><small>order prepared</small><h1>Дякуємо.<br/><em>Тепер — до деталей.</em></h1><p>Номер запиту: <b>{done.orderNumber}</b>. У демо-версії замовлення збережене локально. Для реального магазину підключіть webhook у <code>VITE_ORDER_ENDPOINT</code>.</p><div className="success-actions"><ClayButton className="clay-button--berry" onClick={async()=>{try{await navigator.clipboard.writeText(done.summary);}catch{} window.open(IG,'_blank');}}>Скопіювати замовлення + Instagram ↗</ClayButton><button className="under-link" onClick={()=>go('shop')}>продовжити дивитися</button></div></div></section>;
+  if (done) return <section className="checkout-success section"><div className="success-card clay-surface"><span className="success-heart">♡</span><small>order prepared</small><h1>Дякуємо.<br/><em>Тепер — до деталей.</em></h1><p>Номер замовлення: <b>{done.orderNumber}</b></p><div className="success-actions"><ClayButton className="clay-button--berry" onClick={async()=>{try{await navigator.clipboard.writeText(done.summary);}catch{} window.open(IG,'_blank');}}>Скопіювати замовлення + Instagram ↗</ClayButton><button className="under-link" onClick={()=>go('shop')}>продовжити дивитися</button></div></div></section>;
   return (
     <section className="checkout-page section">
       <div className="checkout-copy"><span className="kicker"><i/> checkout</span><h1>{custom ? <>Розкажіть, кому<br/><em>готуємо подарунок.</em></> : <>Майже вдома.<br/><em>Залишилися деталі.</em></>}</h1><p>Заповніть контакти. Після заявки з вами можна підтвердити наявність, відтінок, доставку та фінальну суму.</p></div>
@@ -610,7 +634,8 @@ function CheckoutPage({ cart, subtotal, clearCart }) {
           </div>
           <div className="order-summary"><div>{cart.map(i=><p key={i.id}><span>{i.qty}× {i.ukName}</span><b>{money(i.price*i.qty)}</b></p>)}</div>{promo&&<p className="discount-line"><span>Промокод {promo.code}</span><b>− {money(discount)}</b></p>}<p><span>Доставка</span><b>{shipping ? money(shipping) : '0 ₴'}</b></p><strong><span>Разом</span><b>{money(total)}</b></strong></div>
         </>}
-        <ClayButton className="clay-button--berry submit-order" type="submit">Надіслати замовлення <span>↗</span></ClayButton>
+        {submitError&&<p className="checkout-submit-error">{submitError}</p>}
+        <ClayButton className="clay-button--berry submit-order" type="submit" disabled={submitting}>{submitting?'Зберігаємо замовлення…':<>Надіслати замовлення <span>↗</span></>}</ClayButton>
         <small className="form-note">Натискаючи кнопку, ви створюєте заявку. Оплата та остаточне підтвердження можуть бути підключені окремим checkout-провайдером.</small>
       </form>
     </section>
@@ -749,13 +774,45 @@ function ProductEditor({ product, categories, onSave, onCancel }) {
 }
 
 function AdminPage({ products, categories, adminAuthed, onLogin, onLogout, onSaveProduct, onDeleteProduct, onResetProducts, onAddCategory, onRenameCategory, onDeleteCategory }) {
+  const [tab, setTab] = useState('catalog');
   const [editing, setEditing] = useState(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [editingCategory, setEditingCategory] = useState('');
   const [editingCategoryValue, setEditingCategoryValue] = useState('');
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState('');
+  const [openOrder, setOpenOrder] = useState('');
+  const [orderFilter, setOrderFilter] = useState('all');
+
+  const apiToken = () => localStorage.getItem('domivka-admin-token') || '';
+  const loadOrders = async () => {
+    if (!adminAuthed) return;
+    setOrdersLoading(true);
+    setOrdersError('');
+    try {
+      if (CATALOG_API) {
+        const response = await fetch(`${CATALOG_API}/orders`,{headers:{'Authorization':`Bearer ${apiToken()}`}});
+        const data = await response.json().catch(()=>[]);
+        if (!response.ok) throw new Error(data.message || 'Не вдалося завантажити замовлення.');
+        setOrders(Array.isArray(data)?data:[]);
+      } else {
+        const local = JSON.parse(localStorage.getItem('domivka-orders')||'[]');
+        setOrders(Array.isArray(local)?local:[]);
+      }
+    } catch (err) {
+      setOrdersError(err.message || 'Не вдалося завантажити замовлення.');
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  useEffect(()=>{ if(adminAuthed) loadOrders(); },[adminAuthed]);
+
   if (!adminAuthed) return <AdminLogin onLogin={onLogin}/>;
+
   const save = async (product, originalId) => {
     const result = await onSaveProduct(product, originalId);
     setNotice(result.ok === false ? result.message : 'Позицію збережено ♡');
@@ -791,18 +848,92 @@ function AdminPage({ products, categories, adminAuthed, onLogin, onLogout, onSav
     setNotice(result.ok === false ? result.message : 'Категорію видалено.');
     setTimeout(()=>setNotice(''),1800);
   };
+
+  const updateOrderStatus = async (orderNumber, status) => {
+    const previous = orders.find(order=>order.orderNumber===orderNumber);
+    if (!previous || previous.status === status) return previous;
+    try {
+      let updated;
+      if (CATALOG_API) {
+        const response = await fetch(`${CATALOG_API}/orders/${encodeURIComponent(orderNumber)}`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiToken()}`},body:JSON.stringify({status})});
+        const data = await response.json().catch(()=>({}));
+        if (!response.ok) throw new Error(data.message || 'Не вдалося змінити статус.');
+        updated = data;
+      } else {
+        updated = {...previous,status,openedAt:previous.openedAt || (status!=='new'?new Date().toISOString():null),updatedAt:new Date().toISOString()};
+        const next = orders.map(order=>order.orderNumber===orderNumber?updated:order);
+        localStorage.setItem('domivka-orders',JSON.stringify(next));
+      }
+      setOrders(prev=>prev.map(order=>order.orderNumber===orderNumber?updated:order));
+      return updated;
+    } catch (err) {
+      setNotice(err.message || 'Не вдалося змінити статус.');
+      setTimeout(()=>setNotice(''),1800);
+      return null;
+    }
+  };
+
+  const toggleOrder = async order => {
+    const closing = openOrder === order.orderNumber;
+    setOpenOrder(closing ? '' : order.orderNumber);
+    if (!closing && (order.status || 'new') === 'new') await updateOrderStatus(order.orderNumber,'seen');
+  };
+
+  const orderCounts = ORDER_STATUSES.reduce((acc,item)=>({...acc,[item.value]:orders.filter(order=>(order.status||'new')===item.value).length}),{});
+  const filteredOrders = orderFilter==='all' ? orders : orders.filter(order=>(order.status||'new')===orderFilter);
+  const formatDate = value => value ? new Intl.DateTimeFormat('uk-UA',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(value)) : '—';
+
   return <section className="admin-page section">
-    <div className="admin-top"><div><span className="kicker"><i/> DOMIVKA CMS</span><h1>Каталог<br/><em>без коду.</em></h1><p>Усі поля зовнішньої картки каталогу та внутрішньої сторінки товару редагуються тут.</p></div><div className="admin-top-actions"><ClayButton className="clay-button--berry" onClick={()=>{setCreating(true);setEditing(null)}}>＋ Додати item</ClayButton><button className="under-link" onClick={onLogout}>Вийти</button></div></div>
-    {(creating||editing)&&<ProductEditor key={editing?.id || 'new-product'} product={editing} categories={categories} onSave={save} onCancel={()=>{setCreating(false);setEditing(null)}}/>}
-    <section className="category-manager clay-surface">
-      <div className="category-manager-head"><div><small>CATALOG TAXONOMY</small><h2>Категорії</h2><p>Додавайте, перейменовуйте або видаляйте категорії. Один товар може бути одночасно у декількох категоріях.</p></div><span>{categories.length} categories</span></div>
-      <div className="category-create-row"><label className="clay-input"><span>Нова категорія</span><input value={newCategory} onChange={e=>setNewCategory(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addCategory()}}} placeholder="Наприклад: Wedding"/></label><button type="button" onClick={addCategory}>＋ Додати</button></div>
-      <div className="category-list">{categories.map(name => <article className="category-admin-item" key={name}>
-        {editingCategory===name ? <><input autoFocus value={editingCategoryValue} onChange={e=>setEditingCategoryValue(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')saveCategoryName(name);if(e.key==='Escape')setEditingCategory('')}}/><div className="category-admin-actions"><button onClick={()=>saveCategoryName(name)}>Зберегти</button><button onClick={()=>setEditingCategory('')}>Скасувати</button></div></> : <><div><b>{name}</b><small>{products.filter(p=>productCategories(p).includes(name)).length} товарів</small></div><div className="category-admin-actions"><button onClick={()=>{setEditingCategory(name);setEditingCategoryValue(name)}}>Редагувати</button><button className="danger" onClick={()=>removeCategory(name)}>Видалити</button></div></>}
-      </article>)}</div>
-    </section>
-    <div className="admin-list-head"><span>{products.length} items</span><button className="admin-reset" onClick={()=>{if(window.confirm('Повернути початковий каталог?')) onResetProducts()}}>Reset demo catalogue</button></div>
-    <div className="admin-products">{products.map(p=><article className="admin-product clay-surface" key={p.id}><img src={primaryImage(p)} alt=""/><div className="admin-product-copy"><small>{categoryLabel(p)} · {p.badge}</small><h3>{p.ukName}</h3><p>{p.short}</p></div><strong>{money(p.price)}</strong><div className="admin-item-actions"><button onClick={()=>{setEditing(p);setCreating(false);window.scrollTo({top:0,behavior:'smooth'})}}>Редагувати</button><button className="danger" onClick={()=>remove(p)}>Видалити</button></div></article>)}</div>
+    <div className="admin-top"><div><span className="kicker"><i/> DOMIVKA CMS</span><h1>{tab==='catalog'?<>Каталог<br/><em>без коду.</em></>:<>Замовлення<br/><em>під контролем.</em></>}</h1><p>{tab==='catalog'?'Усі поля зовнішньої картки каталогу та внутрішньої сторінки товару редагуються тут.':'Нові заявки з checkout автоматично потрапляють сюди. Відкриття нового замовлення переводить його в “Побачене”.'}</p></div><div className="admin-top-actions">{tab==='catalog'&&<ClayButton className="clay-button--berry" onClick={()=>{setCreating(true);setEditing(null)}}>＋ Додати item</ClayButton>}<button className="under-link" onClick={onLogout}>Вийти</button></div></div>
+
+    <nav className="admin-tabs clay-surface" aria-label="Admin sections">
+      <button className={tab==='catalog'?'active':''} onClick={()=>setTab('catalog')}><span>Каталог</span><b>{products.length}</b></button>
+      <button className={tab==='orders'?'active':''} onClick={()=>{setTab('orders');loadOrders()}}><span>Замовлення</span><b className={orderCounts.new?'has-new':''}>{orderCounts.new || orders.length}</b></button>
+    </nav>
+
+    {tab==='catalog' ? <>
+      {(creating||editing)&&<ProductEditor key={editing?.id || 'new-product'} product={editing} categories={categories} onSave={save} onCancel={()=>{setCreating(false);setEditing(null)}}/>}
+      <section className="category-manager clay-surface">
+        <div className="category-manager-head"><div><small>CATALOG TAXONOMY</small><h2>Категорії</h2><p>Додавайте, перейменовуйте або видаляйте категорії. Один товар може бути одночасно у декількох категоріях.</p></div><span>{categories.length} categories</span></div>
+        <div className="category-create-row"><label className="clay-input"><span>Нова категорія</span><input value={newCategory} onChange={e=>setNewCategory(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addCategory()}}} placeholder="Наприклад: Wedding"/></label><button type="button" onClick={addCategory}>＋ Додати</button></div>
+        <div className="category-list">{categories.map(name => <article className="category-admin-item" key={name}>
+          {editingCategory===name ? <><input autoFocus value={editingCategoryValue} onChange={e=>setEditingCategoryValue(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')saveCategoryName(name);if(e.key==='Escape')setEditingCategory('')}}/><div className="category-admin-actions"><button onClick={()=>saveCategoryName(name)}>Зберегти</button><button onClick={()=>setEditingCategory('')}>Скасувати</button></div></> : <><div><b>{name}</b><small>{products.filter(p=>productCategories(p).includes(name)).length} товарів</small></div><div className="category-admin-actions"><button onClick={()=>{setEditingCategory(name);setEditingCategoryValue(name)}}>Редагувати</button><button className="danger" onClick={()=>removeCategory(name)}>Видалити</button></div></>}
+        </article>)}</div>
+      </section>
+      <div className="admin-list-head"><span>{products.length} items</span><button className="admin-reset" onClick={()=>{if(window.confirm('Повернути початковий каталог?')) onResetProducts()}}>Reset demo catalogue</button></div>
+      <div className="admin-products">{products.map(p=><article className="admin-product clay-surface" key={p.id}><img src={primaryImage(p)} alt=""/><div className="admin-product-copy"><small>{categoryLabel(p)} · {p.badge}</small><h3>{p.ukName}</h3><p>{p.short}</p></div><strong>{money(p.price)}</strong><div className="admin-item-actions"><button onClick={()=>{setEditing(p);setCreating(false);window.scrollTo({top:0,behavior:'smooth'})}}>Редагувати</button><button className="danger" onClick={()=>remove(p)}>Видалити</button></div></article>)}</div>
+    </> : <section className="orders-admin">
+      <div className="orders-toolbar clay-surface">
+        <div className="orders-filter-list"><button className={orderFilter==='all'?'active':''} onClick={()=>setOrderFilter('all')}>Усі <b>{orders.length}</b></button>{ORDER_STATUSES.map(item=><button key={item.value} className={orderFilter===item.value?'active':''} onClick={()=>setOrderFilter(item.value)}>{item.short} <b>{orderCounts[item.value]||0}</b></button>)}</div>
+        <button className="orders-refresh" onClick={loadOrders} disabled={ordersLoading}>{ordersLoading?'Оновлення…':'↻ Оновити'}</button>
+      </div>
+      {ordersError&&<div className="orders-empty clay-surface"><b>Не вдалося завантажити замовлення.</b><p>{ordersError}</p></div>}
+      {!ordersError&&!ordersLoading&&!filteredOrders.length&&<div className="orders-empty clay-surface"><span>♡</span><h2>Тут поки тихо.</h2><p>Нові заявки з checkout з’являться тут автоматично.</p></div>}
+      <div className="orders-list">{filteredOrders.map(order=>{
+        const status=order.status||'new';
+        const expanded=openOrder===order.orderNumber;
+        const items=Array.isArray(order.items)?order.items:[];
+        return <article className={`admin-order clay-surface status-${status} ${expanded?'open':''}`} key={order.orderNumber}>
+          <button className="admin-order-summary" onClick={()=>toggleOrder(order)}>
+            <span className={`order-status status-${status}`}>{orderStatusLabel(status)}</span>
+            <div className="order-main"><small>{order.orderNumber} · {formatDate(order.createdAt)}</small><h3>{order.customer?.name || 'Без імені'}</h3><p>{order.customer?.city || 'Місто не вказано'} · {order.customer?.phone || 'без телефону'}</p></div>
+            <div className="order-items-mini"><span>{items.length ? `${items.reduce((n,item)=>n+Number(item.qty||1),0)} товарів` : 'Custom gift'}</span><b>{money(Number(order.total||0))}</b></div>
+            <i>{expanded?'−':'+'}</i>
+          </button>
+          {expanded&&<div className="admin-order-details">
+            <div className="order-detail-grid">
+              <div><small>КОНТАКТИ</small><p><b>{order.customer?.name || '—'}</b><br/>{order.customer?.phone || '—'}<br/>{order.customer?.contact || '—'}</p></div>
+              <div><small>ДОСТАВКА</small><p><b>{order.customer?.city || '—'}</b><br/>{order.customer?.deliveryMethod || '—'}</p></div>
+              <div><small>КОМЕНТАР</small><p>{order.customer?.note || 'Без коментаря'}</p></div>
+            </div>
+            {items.length>0&&<div className="order-products"><small>СКЛАД ЗАМОВЛЕННЯ</small>{items.map((item,index)=><p key={`${item.id}-${index}`}><span>{item.qty}× {item.name}</span><b>{money(Number(item.price||0)*Number(item.qty||1))}</b></p>)}</div>}
+            {order.customGift&&<div className="order-gift-brief"><small>CUSTOM GIFT BRIEF</small><pre>{JSON.stringify(order.customGift,null,2)}</pre></div>}
+            <div className="order-finance">{order.promo&&<p><span>Промокод {order.promo.code}</span><b>− {money(Number(order.discount||0))}</b></p>}<p><span>Товари</span><b>{money(Number(order.subtotal||0))}</b></p><p><span>Доставка</span><b>{money(Number(order.shipping||0))}</b></p><strong><span>Разом</span><b>{money(Number(order.total||0))}</b></strong></div>
+            <div className="order-status-editor"><div><small>СТАТУС ЗАМОВЛЕННЯ</small><p>Зміна зберігається одразу.</p></div><div className="order-status-buttons">{ORDER_STATUSES.map(item=><button key={item.value} className={`${status===item.value?'active':''} status-${item.value}`} onClick={()=>updateOrderStatus(order.orderNumber,item.value)}>{item.short}</button>)}</div></div>
+          </div>}
+        </article>;
+      })}</div>
+    </section>}
     {notice&&<div className="toast clay-surface">{notice}</div>}
   </section>;
 }

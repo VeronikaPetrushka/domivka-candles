@@ -17,9 +17,11 @@ if (fs.existsSync(envFile)) {
 }
 const dataFile = path.join(root, 'data', 'products.json');
 const categoriesFile = path.join(root, 'data', 'categories.json');
+const ordersFile = path.join(root, 'data', 'orders.json');
 
 const seedProductsFile = path.join(root, 'seed', 'products.json');
 const seedCategoriesFile = path.join(root, 'seed', 'categories.json');
+const seedOrdersFile = path.join(root, 'seed', 'orders.json');
 
 function ensureInitialData() {
   fs.mkdirSync(path.dirname(dataFile), { recursive: true });
@@ -30,6 +32,10 @@ function ensureInitialData() {
 
   if (!fs.existsSync(categoriesFile) && fs.existsSync(seedCategoriesFile)) {
     fs.copyFileSync(seedCategoriesFile, categoriesFile);
+  }
+
+  if (!fs.existsSync(ordersFile) && fs.existsSync(seedOrdersFile)) {
+    fs.copyFileSync(seedOrdersFile, ordersFile);
   }
 }
 
@@ -67,6 +73,41 @@ function readCategories() {
 function writeCategories(categories) {
   fs.mkdirSync(path.dirname(categoriesFile), { recursive: true });
   fs.writeFileSync(categoriesFile, JSON.stringify(categories, null, 2));
+}
+
+const ORDER_STATUSES = new Set(['new', 'seen', 'in_progress', 'delivery']);
+function normalizeOrder(order) {
+  const status = ORDER_STATUSES.has(order?.status) ? order.status : 'new';
+  return {
+    orderNumber: String(order?.orderNumber || '').trim(),
+    customer: order?.customer && typeof order.customer === 'object' ? order.customer : {},
+    items: Array.isArray(order?.items) ? order.items.map(item => ({
+      id: String(item?.id || ''),
+      name: String(item?.name || ''),
+      price: Number(item?.price || 0),
+      qty: Math.max(1, Number(item?.qty || 1)),
+    })) : [],
+    customGift: order?.customGift && typeof order.customGift === 'object' ? order.customGift : null,
+    promo: order?.promo && typeof order.promo === 'object' ? order.promo : null,
+    subtotal: Number(order?.subtotal || 0),
+    discount: Number(order?.discount || 0),
+    shipping: Number(order?.shipping || 0),
+    total: Number(order?.total || 0),
+    status,
+    createdAt: order?.createdAt || new Date().toISOString(),
+    openedAt: order?.openedAt || null,
+    updatedAt: order?.updatedAt || order?.createdAt || new Date().toISOString(),
+  };
+}
+function readOrders() {
+  try {
+    const list = JSON.parse(fs.readFileSync(ordersFile, 'utf8'));
+    return Array.isArray(list) ? list.map(normalizeOrder) : [];
+  } catch { return []; }
+}
+function writeOrders(orders) {
+  fs.mkdirSync(path.dirname(ordersFile), { recursive: true });
+  fs.writeFileSync(ordersFile, JSON.stringify(orders.map(normalizeOrder), null, 2));
 }
 function productCategories(p) {
   const list = Array.isArray(p?.categories) ? p.categories : [];
@@ -139,6 +180,40 @@ const server = http.createServer(async (req, res) => {
       const input = await body(req);
       if (safeEqual(input.email, ADMIN_EMAIL) && safeEqual(input.password, ADMIN_PASSWORD)) return json(res, 200, { token: signToken(ADMIN_EMAIL) });
       return json(res, 401, { message: 'Невірний email або пароль.' });
+    }
+
+    if (pathname === '/api/orders' && req.method === 'POST') {
+      const input = await body(req);
+      const item = normalizeOrder({ ...input, status: 'new', openedAt: null, updatedAt: new Date().toISOString() });
+      if (!item.orderNumber || !item.customer?.name || !item.customer?.phone) return json(res, 400, { message: 'Missing order fields' });
+      const orders = readOrders();
+      if (orders.some(order => order.orderNumber === item.orderNumber)) return json(res, 409, { message: 'Order already exists' });
+      writeOrders([item, ...orders]);
+      return json(res, 201, item);
+    }
+    if (pathname === '/api/orders' && req.method === 'GET') {
+      if (!verifyToken(req)) return json(res, 401, { message: 'Unauthorized' });
+      const orders = readOrders().sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      return json(res, 200, orders);
+    }
+    if (pathname.startsWith('/api/orders/') && req.method === 'PUT') {
+      if (!verifyToken(req)) return json(res, 401, { message: 'Unauthorized' });
+      const orderNumber = decodeURIComponent(pathname.slice('/api/orders/'.length));
+      const orders = readOrders();
+      const index = orders.findIndex(order => order.orderNumber === orderNumber);
+      if (index < 0) return json(res, 404, { message: 'Order not found' });
+      const input = await body(req);
+      const nextStatus = String(input.status || orders[index].status);
+      if (!ORDER_STATUSES.has(nextStatus)) return json(res, 400, { message: 'Invalid order status' });
+      const wasNew = orders[index].status === 'new';
+      orders[index] = normalizeOrder({
+        ...orders[index],
+        status: nextStatus,
+        openedAt: (wasNew && nextStatus !== 'new') ? new Date().toISOString() : orders[index].openedAt,
+        updatedAt: new Date().toISOString(),
+      });
+      writeOrders(orders);
+      return json(res, 200, orders[index]);
     }
     if (pathname === '/api/categories' && req.method === 'GET') return json(res, 200, readCategories());
     if (pathname === '/api/categories' && req.method === 'POST') {
