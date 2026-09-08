@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+const gsap = window.gsap;
+const ScrollTrigger = window.ScrollTrigger;
+if (gsap && ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
 
 const IG = 'https://www.instagram.com/domivka_candles/';
 
@@ -218,19 +221,247 @@ function useRoute() {
   return route;
 }
 
-function useReveal(dep) {
+function useMotion(dep) {
   useEffect(() => {
-    const nodes = [...document.querySelectorAll('[data-reveal]')];
-    const io = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          io.unobserve(entry.target);
-        }
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const revealNodes = [...document.querySelectorAll('[data-reveal]')];
+
+    if (reduced || !gsap || !ScrollTrigger) {
+      revealNodes.forEach(node => {
+        node.style.opacity = '1';
+        node.style.transform = 'none';
       });
-    }, { threshold: 0.1, rootMargin: '0px 0px -30px' });
-    nodes.forEach(n => io.observe(n));
-    return () => io.disconnect();
+      return;
+    }
+
+    let frame = requestAnimationFrame(() => {
+      const ctx = gsap.context(() => {
+        gsap.fromTo('.site-header',
+          { y: -28, autoAlpha: 0 },
+          { y: 0, autoAlpha: 1, duration: .8, ease: 'power3.out', clearProps: 'transform' }
+        );
+
+        gsap.fromTo('main',
+          { autoAlpha: 0, y: 12 },
+          { autoAlpha: 1, y: 0, duration: .55, ease: 'power2.out', clearProps: 'transform' }
+        );
+
+        // Clean, consistent section entrances. Elements no longer fly in from
+        // alternating sides or drift away again while the user keeps scrolling.
+        revealNodes.forEach((node) => {
+          gsap.fromTo(node,
+            { y: 34, autoAlpha: 0 },
+            {
+              y: 0, autoAlpha: 1, duration: .82, ease: 'power3.out',
+              scrollTrigger: {
+                trigger: node,
+                start: 'top 88%',
+                toggleActions: 'play none none reverse',
+              },
+            }
+          );
+        });
+
+        // Keep headings stable after their entrance. This avoids the large
+        // collection title sliding sideways as the page is scrolled.
+        document.querySelectorAll('.section-heading h2, .story-teaser h2, .gift-copy h2, .page-hero h1').forEach((heading) => {
+          gsap.fromTo(heading,
+            { y: 28, autoAlpha: 0 },
+            {
+              y: 0, autoAlpha: 1, duration: .82, ease: 'power3.out',
+              scrollTrigger: { trigger: heading, start: 'top 89%', toggleActions: 'play none none reverse' },
+            }
+          );
+        });
+
+        // Product/card photography stays anchored inside its frame. Only page
+        // hero media gets a very small depth shift; card images no longer float.
+        document.querySelectorAll('.page-hero figure img').forEach((img) => {
+          gsap.fromTo(img,
+            { scale: 1.035 },
+            {
+              scale: 1,
+              ease: 'none',
+              scrollTrigger: { trigger: img, start: 'top bottom', end: 'bottom top', scrub: 1.1 },
+            }
+          );
+        });
+
+        document.querySelectorAll('.product-card').forEach((card) => {
+          if (card.closest('.home-products-track')) return;
+          gsap.fromTo(card,
+            { y: 32, autoAlpha: 0 },
+            {
+              y: 0, autoAlpha: 1, duration: .72, ease: 'power3.out',
+              scrollTrigger: { trigger: card, start: 'top 91%', toggleActions: 'play none none reverse' },
+            }
+          );
+        });
+
+        const hero = document.querySelector('.home-hero');
+        if (hero) {
+          const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+          tl.from('.hero-copy .kicker', { x: -35, autoAlpha: 0, duration: .65 })
+            .from('.hero-copy h1', { y: 48, autoAlpha: 0, duration: .9 }, '-=.35')
+            .from('.hero-copy > p, .hero-actions, .hero-notes', { y: 20, autoAlpha: 0, duration: .6, stagger: .08 }, '-=.55')
+            .from('.hero-photo--main', { x: 90, y: 35, rotate: 9, autoAlpha: 0, duration: 1 }, '-=.85')
+            .from('.hero-photo--small, .hero-sticker', { scale: .72, rotate: -10, autoAlpha: 0, duration: .65, stagger: .09 }, '-=.55');
+
+          gsap.to('.hero-photo--main', {
+            yPercent: 10, rotate: 2.5, ease: 'none',
+            scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: 1 },
+          });
+          gsap.to('.hero-photo--small', {
+            yPercent: -14, rotate: -5, ease: 'none',
+            scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: 1.1 },
+          });
+        }
+
+        const orbitSection = document.querySelector('.social-diary');
+        const orbit = document.querySelector('.social-orbit');
+        const orbitCards = gsap.utils.toArray('.social-orbit-card');
+        if (orbitSection && orbit) {
+          // Clean entrance for the copy, while the images keep the circular
+          // scroll motion that makes the Instagram diary feel alive.
+          gsap.fromTo('.social-diary-copy > *',
+            { y: 24, autoAlpha: 0 },
+            {
+              y: 0, autoAlpha: 1, duration: .72, stagger: .055, ease: 'power3.out',
+              scrollTrigger: { trigger: orbitSection, start: 'top 75%', toggleActions: 'play none none reverse' },
+            }
+          );
+          gsap.fromTo(orbit,
+            { rotation: -12, scale: .9, autoAlpha: 0 },
+            {
+              rotation: 0, scale: 1, autoAlpha: 1, duration: .95, ease: 'power3.out',
+              scrollTrigger: { trigger: orbitSection, start: 'top 78%', toggleActions: 'play none none reverse' },
+            }
+          );
+          gsap.fromTo('.social-orbit-center',
+            { scale: .86, autoAlpha: 0 },
+            {
+              scale: 1, autoAlpha: 1, duration: .9, ease: 'back.out(1.25)',
+              scrollTrigger: { trigger: orbitSection, start: 'top 78%', toggleActions: 'play none none reverse' },
+            }
+          );
+          gsap.fromTo(orbitCards,
+            { scale: .7, autoAlpha: 0 },
+            {
+              scale: 1, autoAlpha: 1, duration: .72, stagger: .065, ease: 'back.out(1.45)',
+              scrollTrigger: { trigger: orbitSection, start: 'top 78%', toggleActions: 'play none none reverse' },
+            }
+          );
+
+          // One shared orbit around the large centre image. All satellites move
+          // along the same large ellipse instead of tracing little circles around
+          // their own starting points. The cards counter-rotate so the photos and
+          // number labels remain upright while the ring travels around the centre.
+          const orbitDuration = window.matchMedia('(max-width: 700px)').matches ? 34 : 42;
+          gsap.set(orbit, { transformOrigin: '50% 50%' });
+
+          const orbitLoop = gsap.timeline({ repeat: -1, paused: true });
+          orbitLoop.to(orbit, {
+            rotation: '+=360',
+            duration: orbitDuration,
+            ease: 'none',
+          }, 0);
+          orbitCards.forEach((card) => {
+            orbitLoop.to(card, {
+              rotation: '-=360',
+              duration: orbitDuration,
+              ease: 'none',
+            }, 0);
+          });
+
+          ScrollTrigger.create({
+            trigger: orbitSection,
+            start: 'top 96%',
+            end: 'bottom 4%',
+            onEnter: () => orbitLoop.play(),
+            onEnterBack: () => orbitLoop.play(),
+            onLeave: () => orbitLoop.pause(),
+            onLeaveBack: () => orbitLoop.pause(),
+          });
+        }
+
+        // Story teaser: images appear as a deliberate layered composition, then
+        // stay put. No scroll-following drift after the entrance.
+        const storyTeaser = document.querySelector('.story-teaser');
+        if (storyTeaser) {
+          const storyTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: storyTeaser,
+              start: 'top 78%',
+              toggleActions: 'play none none reverse',
+            }
+          });
+          storyTl
+            .fromTo('.story-one',
+              { x: 70, y: 30, rotate: -9, autoAlpha: 0, scale: .94 },
+              { x: 0, y: 0, rotate: -4, autoAlpha: 1, scale: 1, duration: .9, ease: 'power3.out' }
+            )
+            .fromTo('.story-two',
+              { x: -58, y: 46, rotate: 10, autoAlpha: 0, scale: .94 },
+              { x: 0, y: 0, rotate: 5, autoAlpha: 1, scale: 1, duration: .9, ease: 'power3.out' },
+              '-=.62'
+            )
+            .fromTo('.hand-note',
+              { y: 24, rotate: -8, scale: .72, autoAlpha: 0 },
+              { y: 0, rotate: 0, scale: 1, autoAlpha: 1, duration: .68, ease: 'back.out(1.45)' },
+              '-=.52'
+            );
+        }
+
+        // Homepage favourites: vertical wheel/trackpad scrolling becomes a
+        // horizontal product journey on desktop. The cards themselves remain
+        // stable, so there is no floating image motion inside the frames.
+        const homeProductStage = document.querySelector('.home-products-stage');
+        const homeProductTrack = document.querySelector('.home-products-track');
+        if (homeProductStage && homeProductTrack) {
+          const homeCards = gsap.utils.toArray('.home-products-track .product-card');
+          gsap.fromTo(homeCards,
+            { y: 26, autoAlpha: 0 },
+            {
+              y: 0, autoAlpha: 1, duration: .66, stagger: .055, ease: 'power3.out',
+              scrollTrigger: { trigger: homeProductStage, start: 'top 82%', toggleActions: 'play none none reverse' },
+            }
+          );
+
+          if (window.matchMedia('(min-width: 901px)').matches) {
+            const distance = () => Math.max(0, homeProductTrack.scrollWidth - document.documentElement.clientWidth + 24);
+            gsap.to(homeProductTrack, {
+              x: () => -distance(),
+              ease: 'none',
+              force3D: true,
+              scrollTrigger: {
+                trigger: homeProductStage,
+                start: 'top 108px',
+                end: () => `+=${Math.max(720, distance() * .84)}`,
+                scrub: .78,
+                pin: true,
+                pinSpacing: true,
+                anticipatePin: 1,
+                invalidateOnRefresh: true,
+              },
+            });
+          }
+        }
+
+        gsap.to('.blob-a', { xPercent: 20, yPercent: -14, ease: 'none', scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: 2 } });
+        gsap.to('.blob-b', { xPercent: -18, yPercent: 16, ease: 'none', scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: 2.2 } });
+
+        ScrollTrigger.refresh();
+      });
+      window.__domivkaGsapContext = ctx;
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      if (window.__domivkaGsapContext) {
+        window.__domivkaGsapContext.revert();
+        window.__domivkaGsapContext = null;
+      }
+    };
   }, [dep]);
 }
 
@@ -320,7 +551,7 @@ function HomePage({ addToCart, products }) {
       <div className="brand-marquee" aria-hidden="true"><div>{Array.from({length:8}).map((_,i)=><React.Fragment key={i}><span>DOMIVKA</span><i>✿</i><span>MADE TO FEEL LIKE HOME</span><i>♡</i></React.Fragment>)}</div></div>
 
       <section className="section section--collections">
-        <div className="section-heading collection-heading" data-reveal>
+        <div className="section-heading collection-heading">
           <div>
             <span className="kicker"><i/> choose a mood</span>
             <h2>Не просто аромат.<br/><em>Маленький характер.</em></h2>
@@ -352,13 +583,16 @@ function HomePage({ addToCart, products }) {
         </div>
       </section>
 
-      <section className="section bestsellers">
-        <div className="section-heading section-heading--row" data-reveal>
+      <section className="section bestsellers bestsellers-horizontal">
+        <div className="section-heading section-heading--row bestsellers-heading" data-reveal>
           <div><span className="kicker"><i/> little favourites</span><h2>Зараз хочеться <em>ось це.</em></h2></div>
           <ClayButton onClick={() => go('shop')}>Весь каталог ↗</ClayButton>
         </div>
-        <div className="product-grid product-grid--home">
-          {products.slice(0,4).map(p => <ProductCard key={p.id} product={p} addToCart={addToCart}/>)}
+        <div className="home-products-stage">
+          <div className="home-products-track">
+            {products.slice(0,8).map(p => <ProductCard key={p.id} product={p} addToCart={addToCart}/>)}
+            <CatalogJourneyCard />
+          </div>
         </div>
       </section>
 
@@ -376,13 +610,50 @@ function HomePage({ addToCart, products }) {
         </div>
       </section>
 
-      <section className="section social-strip">
-        <div className="section-heading section-heading--row"><div><span className="kicker"><i/> from instagram</span><h2>Живі кадри.<br/><em>Без стерильності.</em></h2></div><a className="under-link" href={IG} target="_blank" rel="noreferrer">@domivka_candles ↗</a></div>
-        <div className="social-rail">
-          {['crystal-shoes','calla-lily','pearl-shell','biscuit-candle','meringue-bloom','coconut-candle'].map(name => <figure key={name} className="clay-photo"><img src={`/images/${name}.webp`} alt="DOMIVKA Instagram candle"/></figure>)}
+      <section className="section social-diary">
+        <div className="social-diary-copy">
+          <span className="kicker"><i/> instagram diary</span>
+          <h2>Зазирніть у DOMIVKA.<br/><em>Там трохи більше життя.</em></h2>
+          <p>Нові форми, пакування, процес і маленькі кадри з майстерні — те, що не завжди потрапляє в каталог.</p>
+          <a className="social-diary-cta" href={IG} target="_blank" rel="noreferrer"><span>@domivka_candles</span><b>Дивитися Instagram ↗</b></a>
+          <div className="social-diary-note"><i/> останні історії бренду — без постановочного відчуття</div>
+        </div>
+
+        <div className="social-orbit-shell" aria-label="DOMIVKA Instagram gallery">
+          <span className="social-orbit-line" aria-hidden="true"/>
+          <div className="social-orbit">
+            {[
+              ['crystal-shoes','01','social-orbit-pos-1'],
+              ['calla-lily','02','social-orbit-pos-2'],
+              ['biscuit-candle','03','social-orbit-pos-3'],
+              ['meringue-bloom','04','social-orbit-pos-4'],
+              ['coconut-candle','05','social-orbit-pos-5'],
+            ].map(([name,index,pos]) => <a key={name} className={`social-orbit-node ${pos}`} href={IG} target="_blank" rel="noreferrer" aria-label={`Instagram post ${index}`}><figure className="social-orbit-card"><img src={`/images/${name}.webp`} alt="DOMIVKA candle" loading="lazy"/><span>{index}</span></figure></a>)}
+          </div>
+          <a className="social-orbit-center" href={IG} target="_blank" rel="noreferrer" aria-label="DOMIVKA Instagram">
+            <img src="/images/pearl-shell.webp" alt="DOMIVKA pearl shell candle" loading="lazy"/>
+            <span><small>inside DOMIVKA</small><b>tap to enter ↗</b></span>
+          </a>
         </div>
       </section>
     </>
+  );
+}
+
+function CatalogJourneyCard() {
+  return (
+    <article className="product-card catalog-journey-card clay-surface">
+      <button className="catalog-journey-link" onClick={() => go('shop')} aria-label="Перейти до каталогу DOMIVKA">
+        <span className="kicker"><i/> all objects</span>
+        <div className="catalog-journey-mark">↗</div>
+        <div className="catalog-journey-copy">
+          <small>ще більше форм, кольорів і настроїв</small>
+          <h3>До<br/>каталогу.</h3>
+          <p>Подивитися всю колекцію DOMIVKA</p>
+        </div>
+        <b>Відкрити каталог <span>→</span></b>
+      </button>
+    </article>
   );
 }
 
@@ -950,7 +1221,7 @@ function App() {
   const [adminAuthed, setAdminAuthed] = useState(()=>localStorage.getItem('domivka-admin-auth') === '1' || Boolean(localStorage.getItem('domivka-admin-token')));
   const [cartOpen, setCartOpen] = useState(false);
   const [toast, setToast] = useState('');
-  useReveal(`${route.page}/${route.param || ''}`);
+  useMotion(`${route.page}/${route.param || ''}`);
 
   useEffect(()=>localStorage.setItem('domivka-cart-v2',JSON.stringify(cart)),[cart]);
   useEffect(()=>{ if (!CATALOG_API) localStorage.setItem('domivka-products-v1',JSON.stringify(products)); },[products]);

@@ -1,7 +1,5 @@
 # DOMIVKA Candles
 
-# DOMIVKA Candles
-
 A warm, animated, multi-page e-commerce catalogue for **DOMIVKA Candles**.
 
 The project includes a public candle catalogue, product pages, shopping cart, checkout flow, promo codes, an admin panel, persistent catalogue API, multi-photo products, and editable categories.
@@ -1203,3 +1201,9 @@ API:
 - `PUT /api/orders/:orderNumber` — admin only, change status
 
 `seed/orders.json` initializes the persistent Railway volume on first deploy.
+
+## Motion / GSAP update
+
+The storefront now uses GSAP + ScrollTrigger for route entrances, scroll reveals, parallax, product-card motion, hero depth and the circular Instagram diary gallery. GSAP is loaded from jsDelivr in `index.html`; if it cannot load, the site falls back to the static layout instead of hiding content.
+
+The redesigned Instagram section is in `HomePage` (`src/main.jsx`) under `.social-diary`, with its responsive styling at the end of `src/styles.css`.

@@ -3710,3 +3710,779 @@ main {
     padding: 34px 18px;
   }
 }
+/* ===== DOMIVKA motion + Instagram diary redesign ===== */
+[data-reveal],
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+.social-diary {
+  max-width: 1420px;
+  margin: 55px auto 120px;
+  padding: clamp(58px, 6vw, 92px);
+  border-radius: 62px;
+  display: grid;
+  grid-template-columns: minmax(300px, .78fr) minmax(520px, 1.22fr);
+  gap: clamp(30px, 5vw, 78px);
+  align-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  color: #fff7f1;
+  background:
+    radial-gradient(circle at 72% 42%, rgba(246, 197, 212, .19), transparent 26%),
+    radial-gradient(circle at 10% 90%, rgba(214, 154, 98, .18), transparent 24%),
+    linear-gradient(135deg, #3a1725 0%, #6f2643 54%, #852e50 100%);
+  box-shadow: 0 34px 74px -42px rgba(67, 21, 38, .72), inset 0 0 0 1px rgba(255,255,255,.12);
+}
+
+.social-diary::before {
+  content: '';
+  position: absolute;
+  width: 540px;
+  height: 540px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 50%;
+  right: -120px;
+  top: -190px;
+  z-index: -1;
+}
+
+.social-diary::after {
+  content: 'DOMIVKA';
+  position: absolute;
+  left: 4.5%;
+  bottom: -3.2vw;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(90px, 12vw, 185px);
+  letter-spacing: -.07em;
+  line-height: .8;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,255,255,.07);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.social-diary-copy {
+  position: relative;
+  z-index: 4;
+}
+
+.social-diary .kicker {
+  color: #f4c2d2;
+}
+
+.social-diary .kicker i {
+  background: currentColor;
+}
+
+.social-diary-copy h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(54px, 5.35vw, 86px);
+  line-height: .91;
+  letter-spacing: -.052em;
+  margin: 22px 0 24px;
+  max-width: 690px;
+}
+
+.social-diary-copy h2 em {
+  color: #f7cbd9;
+  font-weight: 600;
+}
+
+.social-diary-copy > p {
+  max-width: 470px;
+  color: rgba(255,247,241,.73);
+  font-size: 16px;
+  line-height: 1.72;
+  margin: 0 0 30px;
+}
+
+.social-diary-cta {
+  width: min(100%, 430px);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 15px;
+  align-items: center;
+  padding: 9px 10px 9px 18px;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 24px;
+  background: rgba(255,255,255,.08);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  transition: background .3s ease, color .3s ease, transform .3s ease;
+}
+
+.social-diary-cta span {
+  font-size: 12px;
+  color: rgba(255,247,241,.68);
+}
+
+.social-diary-cta b {
+  padding: 13px 16px;
+  border-radius: 17px;
+  background: #fff4ec;
+  color: #5f1f39;
+  font-size: 11px;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
+.social-diary-cta:hover {
+  transform: translateY(-4px);
+  background: #fff4ec;
+  color: #5f1f39;
+}
+
+.social-diary-cta:hover span { color: #7f2846; }
+.social-diary-cta:hover b { background: #7f2846; color: #fff; }
+
+.social-diary-note {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 390px;
+  color: rgba(255,255,255,.48);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  line-height: 1.5;
+}
+
+.social-diary-note i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #efb6c9;
+  box-shadow: 0 0 0 6px rgba(239,182,201,.12);
+  flex: 0 0 7px;
+}
+
+.social-orbit-shell {
+  position: relative;
+  width: min(100%, 690px);
+  aspect-ratio: 1 / .93;
+  justify-self: end;
+  z-index: 3;
+}
+
+.social-orbit-line {
+  position: absolute;
+  inset: 8% 4% 7%;
+  border: 1px solid rgba(255,255,255,.17);
+  border-radius: 50%;
+  transform: rotate(-8deg);
+}
+
+.social-orbit-line::before,
+.social-orbit-line::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #f5d75d;
+  border-radius: 50%;
+  box-shadow: 0 0 0 7px rgba(245,215,93,.09);
+}
+.social-orbit-line::before { left: 9%; top: 27%; }
+.social-orbit-line::after { right: 13%; bottom: 20%; background: #efb6c9; }
+
+.social-orbit {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+}
+
+.social-orbit-node {
+  position: absolute;
+  z-index: 3;
+}
+
+.social-orbit-card {
+  position: relative;
+  margin: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 7px solid rgba(255,244,236,.94);
+  box-shadow: 0 18px 36px -18px rgba(12,4,8,.7);
+  background: #f7eee4;
+  transition: box-shadow .28s ease, border-color .28s ease;
+  will-change: transform;
+}
+
+.social-orbit-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  transition: transform .55s cubic-bezier(.2,.75,.25,1), filter .4s ease;
+}
+
+.social-orbit-card span {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 7px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff4ec;
+  color: #6f2643;
+  font-size: 9px;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(0,0,0,.18);
+}
+
+.social-orbit-node:hover { z-index: 9; }
+.social-orbit-node:hover .social-orbit-card {
+  border-color: #f5d75d;
+  box-shadow: 0 28px 58px -18px rgba(14,4,9,.8);
+}
+.social-orbit-node:hover .social-orbit-card img {
+  transform: scale(1.12);
+  filter: saturate(1.08) contrast(1.03);
+}
+
+.social-orbit-pos-1 { left: 39%; top: 0; }
+.social-orbit-pos-1 .social-orbit-card { width: 132px; height: 132px; }
+.social-orbit-pos-2 { right: 1%; top: 24%; }
+.social-orbit-pos-2 .social-orbit-card { width: 156px; height: 156px; }
+.social-orbit-pos-3 { right: 10%; bottom: 2%; }
+.social-orbit-pos-3 .social-orbit-card { width: 128px; height: 128px; }
+.social-orbit-pos-4 { left: 22%; bottom: 0; }
+.social-orbit-pos-4 .social-orbit-card { width: 146px; height: 146px; }
+.social-orbit-pos-5 { left: 0; top: 30%; }
+.social-orbit-pos-5 .social-orbit-card { width: 120px; height: 120px; }
+
+.social-orbit-center {
+  position: absolute;
+  width: clamp(235px, 22vw, 320px);
+  aspect-ratio: .92;
+  left: 50%;
+  top: 51%;
+  transform: translate(-50%, -50%);
+  border-radius: 46% 54% 49% 51% / 54% 43% 57% 46%;
+  overflow: hidden;
+  border: 9px solid #f8e5db;
+  box-shadow: 0 34px 70px -25px rgba(8,2,5,.75);
+  background: #f8e5db;
+  z-index: 6;
+}
+
+.social-orbit-center::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 52%, rgba(43,15,27,.65));
+}
+
+.social-orbit-center img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .65s cubic-bezier(.2,.8,.2,1);
+}
+
+.social-orbit-center:hover img { transform: scale(1.075); }
+
+.social-orbit-center > span {
+  position: absolute;
+  z-index: 2;
+  left: 20px;
+  right: 20px;
+  bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 10px;
+  color: #fff;
+}
+
+.social-orbit-center small {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  opacity: .7;
+}
+.social-orbit-center b { font-size: 11px; }
+
+/* Make the whole site feel less static even between major GSAP scenes. */
+.product-card,
+.gift-option,
+.mood-card,
+.care-card,
+.story-teaser-images,
+.gift-photo-stack,
+.page-hero figure {
+  will-change: transform;
+}
+
+@media (max-width: 1050px) {
+  .social-diary {
+    margin-left: 24px;
+    margin-right: 24px;
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+  .social-diary-copy { max-width: 760px; }
+  .social-orbit-shell { justify-self: center; width: min(100%, 650px); }
+}
+
+@media (max-width: 700px) {
+  .social-diary {
+    margin: 25px 12px 80px;
+    padding: 48px 18px 32px;
+    border-radius: 38px;
+    gap: 25px;
+  }
+  .social-diary::after { font-size: 28vw; bottom: 2%; }
+  .social-diary-copy h2 { font-size: clamp(45px, 14vw, 66px); }
+  .social-diary-copy > p { font-size: 14px; }
+  .social-diary-cta { grid-template-columns: 1fr; padding: 10px; }
+  .social-diary-cta span { padding: 6px 7px 0; }
+  .social-diary-cta b { text-align: center; }
+  .social-diary-note { font-size: 8px; }
+
+  .social-orbit-shell {
+    width: 100%;
+    min-height: 470px;
+    aspect-ratio: auto;
+  }
+  .social-orbit-line { inset: 9% 2% 8%; }
+  .social-orbit-center { width: 205px; }
+  .social-orbit-pos-1 { left: 37%; top: 0; }
+  .social-orbit-pos-1 .social-orbit-card { width: 88px; height: 88px; border-width: 5px; }
+  .social-orbit-pos-2 { right: 0; top: 27%; }
+  .social-orbit-pos-2 .social-orbit-card { width: 104px; height: 104px; border-width: 5px; }
+  .social-orbit-pos-3 { right: 9%; bottom: 2%; }
+  .social-orbit-pos-3 .social-orbit-card { width: 87px; height: 87px; border-width: 5px; }
+  .social-orbit-pos-4 { left: 16%; bottom: 1%; }
+  .social-orbit-pos-4 .social-orbit-card { width: 98px; height: 98px; border-width: 5px; }
+  .social-orbit-pos-5 { left: -2%; top: 31%; }
+  .social-orbit-pos-5 .social-orbit-card { width: 82px; height: 82px; border-width: 5px; }
+  .social-orbit-card span { width: 23px; min-width: 23px; height: 23px; right: 5px; bottom: 5px; font-size: 7px; }
+  .social-orbit-center > span { left: 13px; right: 13px; bottom: 12px; }
+  .social-orbit-center small { display: none; }
+
+  /* Mobile still gets GSAP motion, but avoid transforms fighting native horizontal scrolling. */
+  .product-grid,
+  .social-orbit-shell,
+  .shop-toolbar { transform-style: flat; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-orbit,
+  .social-orbit-card,
+  .social-orbit-center,
+  [data-reveal] { transform: none !important; opacity: 1 !important; }
+}
+
+/* ===== DOMIVKA motion refinement v2 ===== */
+
+/* Instagram diary: one-screen editorial composition on desktop. */
+@media (min-width: 1051px) {
+  .social-diary {
+    width: min(calc(100% - 48px), 1480px);
+    max-width: 1480px;
+    height: min(780px, calc(100svh - 124px));
+    min-height: min(620px, calc(100svh - 124px));
+    margin: 26px auto 78px;
+    padding: clamp(38px, 3.8vw, 58px) clamp(42px, 5vw, 76px);
+    grid-template-columns: minmax(330px, .78fr) minmax(620px, 1.22fr);
+    gap: clamp(30px, 4vw, 64px);
+  }
+
+  .social-diary-copy h2 {
+    font-size: clamp(52px, 4.55vw, 74px);
+    margin: 17px 0 18px;
+  }
+
+  .social-diary-copy > p {
+    font-size: 14px;
+    line-height: 1.58;
+    margin-bottom: 22px;
+    max-width: 430px;
+  }
+
+  .social-diary-cta { width: min(100%, 420px); }
+  .social-diary-note { margin-top: 17px; }
+
+  .social-orbit-shell {
+    width: min(100%, 720px);
+    height: min(650px, calc(100svh - 205px));
+    min-height: min(520px, calc(100svh - 205px));
+    aspect-ratio: auto;
+  }
+
+  .social-orbit-line { inset: 6% 2% 5%; }
+  .social-orbit-center { width: clamp(275px, 21vw, 330px); }
+
+  /* Larger satellite images without making the section taller. */
+  .social-orbit-pos-1 { left: 38%; top: -1%; }
+  .social-orbit-pos-1 .social-orbit-card { width: 154px; height: 154px; }
+  .social-orbit-pos-2 { right: -1%; top: 23%; }
+  .social-orbit-pos-2 .social-orbit-card { width: 180px; height: 180px; }
+  .social-orbit-pos-3 { right: 8%; bottom: 0; }
+  .social-orbit-pos-3 .social-orbit-card { width: 150px; height: 150px; }
+  .social-orbit-pos-4 { left: 18%; bottom: -1%; }
+  .social-orbit-pos-4 .social-orbit-card { width: 168px; height: 168px; }
+  .social-orbit-pos-5 { left: -1%; top: 29%; }
+  .social-orbit-pos-5 .social-orbit-card { width: 146px; height: 146px; }
+}
+
+/* The collection heading and mood cards now stay put after their entrance. */
+.collection-heading,
+.collection-heading h2,
+.mood-card,
+.mood-card img,
+.product-card,
+.product-card .product-image img {
+  transform-origin: center center;
+}
+
+/* Homepage horizontal product story. */
+.bestsellers-horizontal {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  overflow: clip;
+}
+
+.bestsellers-heading {
+  width: min(100% - 10vw, 1500px);
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 28px;
+}
+
+.home-products-stage {
+  position: relative;
+  height: min(760px, 82svh);
+  min-height: 650px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.home-products-track {
+  display: flex;
+  align-items: flex-start;
+  gap: 25px;
+  width: max-content;
+  padding: 14px 5vw 56px;
+  will-change: transform;
+}
+
+.home-products-track .product-card {
+  flex: 0 0 clamp(300px, 23vw, 365px);
+  width: clamp(300px, 23vw, 365px);
+}
+
+.home-products-track .product-image {
+  aspect-ratio: .88;
+}
+
+/* No scroll-driven floating inside cards. Hover remains intentional. */
+.mood-card img,
+.product-image img {
+  translate: none !important;
+}
+
+@media (max-width: 1050px) {
+  .social-diary {
+    min-height: 0;
+    height: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .bestsellers-horizontal {
+    padding-bottom: 80px;
+  }
+
+  .bestsellers-heading {
+    width: auto;
+    margin-left: 5vw;
+    margin-right: 5vw;
+  }
+
+  .home-products-stage {
+    height: auto;
+    min-height: 0;
+    display: block;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-inline: contain;
+  }
+  .home-products-stage::-webkit-scrollbar { display: none; }
+
+  .home-products-track {
+    transform: none !important;
+    padding: 8px 5vw 24px;
+    gap: 18px;
+  }
+
+  .home-products-track .product-card {
+    flex-basis: min(82vw, 355px);
+    width: min(82vw, 355px);
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 700px) {
+  .social-orbit-pos-1 .social-orbit-card { width: 100px; height: 100px; }
+  .social-orbit-pos-2 .social-orbit-card { width: 116px; height: 116px; }
+  .social-orbit-pos-3 .social-orbit-card { width: 100px; height: 100px; }
+  .social-orbit-pos-4 .social-orbit-card { width: 110px; height: 110px; }
+  .social-orbit-pos-5 .social-orbit-card { width: 96px; height: 96px; }
+}
+
+/* ===== DOMIVKA horizontal story refinement v3 ===== */
+
+/* The pinned catalogue sits under the floating header instead of touching it,
+   and the stage is intentionally shorter so the scene never feels oversized. */
+@media (min-width: 901px) {
+  .home-products-stage {
+    height: min(640px, calc(100svh - 128px));
+    min-height: 560px;
+    align-items: flex-start;
+    padding-top: 10px;
+  }
+
+  .home-products-track {
+    padding-top: 8px;
+    padding-bottom: 30px;
+  }
+
+  .home-products-track .product-card {
+    flex-basis: clamp(300px, 22.5vw, 355px);
+    width: clamp(300px, 22.5vw, 355px);
+  }
+
+  .home-products-track .product-image {
+    aspect-ratio: .94;
+  }
+}
+
+/* Every product title owns exactly the same two-line area. Long titles clamp,
+   short titles stay aligned to the top-left rather than looking centered. */
+.product-meta {
+  align-items: start;
+}
+.product-meta > div {
+  min-width: 0;
+}
+.product-meta h3 {
+  min-height: 2.16em;
+  margin: 6px 0 6px;
+  line-height: 1.08;
+  text-align: left;
+}
+.product-meta h3 button {
+  display: -webkit-box;
+  width: 100%;
+  min-height: 2.16em;
+  padding: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.08;
+  text-align: left;
+  white-space: normal;
+}
+.home-products-track .product-meta {
+  min-height: 132px;
+}
+.home-products-track .product-add {
+  margin-top: auto;
+}
+
+/* Final slide: a purposeful CTA rather than another fake product. */
+.catalog-journey-card {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 72% 22%, rgba(245,215,93,.34), transparent 25%),
+    radial-gradient(circle at 18% 82%, rgba(255,220,229,.48), transparent 31%),
+    linear-gradient(145deg, #8d274d 0%, #6c1d3d 56%, #47152d 100%);
+  color: #fff7f0;
+  border-radius: 34px;
+  overflow: hidden;
+  box-shadow: 0 28px 60px -34px rgba(66,19,39,.75);
+}
+.catalog-journey-link {
+  width: 100%;
+  height: 100%;
+  min-height: 548px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+}
+.catalog-journey-link::before {
+  content: '';
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 50%;
+  right: -75px;
+  top: 65px;
+  transition: transform .7s cubic-bezier(.2,.8,.2,1);
+}
+.catalog-journey-link:hover::before { transform: scale(1.18) rotate(18deg); }
+.catalog-journey-card .kicker { color: rgba(255,247,240,.72); }
+.catalog-journey-card .kicker i { background: #f5d75d; }
+.catalog-journey-mark {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.45);
+  font-size: 24px;
+  transition: transform .45s cubic-bezier(.2,.8,.2,1), background .3s ease, color .3s ease;
+}
+.catalog-journey-link:hover .catalog-journey-mark {
+  transform: rotate(45deg) scale(1.08);
+  background: #fff7f0;
+  color: #6c1d3d;
+}
+.catalog-journey-copy {
+  margin-top: auto;
+  position: relative;
+  z-index: 2;
+}
+.catalog-journey-copy small {
+  display: block;
+  max-width: 220px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(255,247,240,.72);
+}
+.catalog-journey-copy h3 {
+  margin: 0;
+  font-family: 'Playfair Display';
+  font-size: clamp(52px, 4.6vw, 74px);
+  line-height: .88;
+  letter-spacing: -.045em;
+}
+.catalog-journey-copy p {
+  margin: 18px 0 0;
+  max-width: 230px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255,247,240,.78);
+}
+.catalog-journey-link > b {
+  margin-top: 26px;
+  width: 100%;
+  padding-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,.28);
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .catalog-journey-card {
+    scroll-snap-align: start;
+  }
+  .catalog-journey-link {
+    min-height: 520px;
+  }
+  .home-products-track .product-meta {
+    min-height: 128px;
+  }
+}
+
+/* Keep the horizontal product cards visually identical regardless of title length. */
+.home-products-track .product-card:not(.catalog-journey-card) {
+  display: flex;
+  flex-direction: column;
+}
+.home-products-track .product-card:not(.catalog-journey-card) .product-meta {
+  flex: 1 1 auto;
+}
+.home-products-track .product-card:not(.catalog-journey-card) .product-add {
+  margin-top: auto;
+}
+
+/* ===== DOMIVKA Instagram + story motion refinement v4 ===== */
+
+/* Keep every orbit satellite physically inside the berry panel. The orbital
+   motion can still breathe without the bottom circles being cut by overflow. */
+@media (min-width: 1051px) {
+  .social-orbit-shell {
+    overflow: visible;
+    padding-bottom: 18px;
+  }
+
+  .social-orbit-pos-3 { right: 9%; bottom: 7%; }
+  .social-orbit-pos-4 { left: 18%; bottom: 6%; }
+  .social-orbit-pos-1 { top: 2%; }
+
+  .social-diary {
+    /* preserve the rounded berry surface while giving orbit nodes breathing room */
+    padding-bottom: clamp(46px, 4.4vw, 68px);
+  }
+}
+
+/* Orbital nodes are animated by GSAP; prevent CSS hover transforms from fighting
+   the node transform. Hover stays on the card itself. */
+.social-orbit-node {
+  will-change: transform;
+}
+
+/* Story teaser pictures need a clean GSAP entrance. Do not let old CSS transforms
+   override the final composition. */
+.story-teaser-images {
+  overflow: visible;
+}
+.story-teaser-images .story-one,
+.story-teaser-images .story-two,
+.story-teaser-images .hand-note {
+  will-change: transform, opacity;
+}
+
+@media (max-width: 1050px) {
+  .social-orbit-pos-3 { bottom: 6%; }
+  .social-orbit-pos-4 { bottom: 5%; }
+}
+
+@media (max-width: 700px) {
+  .social-orbit-pos-3 { bottom: 7%; }
+  .social-orbit-pos-4 { bottom: 6%; }
+  .social-orbit-shell { padding-bottom: 14px; }
+}
+
+/* ===== DOMIVKA orbit refinement v5 ===== */
+.social-orbit {
+  transform-origin: 50% 50% !important;
+  will-change: transform;
+}
+
+.social-orbit-node {
+  transform-origin: 50% 50%;
+}
+
+.social-orbit-card {
+  will-change: transform;
+}
