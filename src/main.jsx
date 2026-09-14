@@ -15,7 +15,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Pink Carousel',
     ukName: 'Рожева карусель',
     price: 820,
-    image: '/images/pink-carousel-gift.webp',
+    images: ['/images/pink-carousel-gift.webp', '/images/carousel-2.png'],
     collection: 'Gift',
     badge: 'gift-ready',
     short: 'Керамічна свічка як маленький святковий об’єкт.',
@@ -27,7 +27,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Croissant Heart',
     ukName: 'Круасан-серце',
     price: 690,
-    image: '/images/croissant-heart.webp',
+    images: ['/images/croissant-heart.webp', '/images/croissant-2.png'],
     collection: 'Sweet',
     badge: 'playful',
     short: 'Іронічна свічка, натхненна ранковою випічкою.',
@@ -39,7 +39,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Coconut Calm',
     ukName: 'Кокосовий спокій',
     price: 760,
-    image: '/images/coconut-candle.webp',
+    images: ['/images/coconut-candle.webp', '/images/coconut-2.png'],
     collection: 'Sea',
     badge: 'slow ritual',
     short: 'Тропічний настрій у природній формі.',
@@ -51,7 +51,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Shell Stories',
     ukName: 'Морські історії',
     price: 640,
-    image: '/images/shell-collection.webp',
+    images: ['/images/shell-collection.webp', '/images/shell-2.png'],
     collection: 'Sea',
     badge: 'collection',
     short: 'Мініатюрні мушлі, морські зірки та форми з відчуттям літа.',
@@ -63,7 +63,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Crystal Slippers',
     ukName: 'Кришталеві туфельки',
     price: 980,
-    image: '/images/crystal-shoes.webp',
+    images: ['/images/crystal-shoes.webp', '/images/whales-2.png'],
     collection: 'Statement',
     badge: 'statement',
     short: 'Свічка-об’єкт, яку хочеться розглядати ще до запалювання.',
@@ -75,7 +75,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Pearl Shell',
     ukName: 'Перлинна мушля',
     price: 790,
-    image: '/images/pearl-shell.webp',
+    images: ['/images/pearl-shell.webp', '/images/oysters-2.png'],
     collection: 'Sea',
     badge: 'bestseller mood',
     short: 'Перлинна композиція у мушлі — ніжна, тактильна, трохи казкова.',
@@ -87,7 +87,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Biscuit Glow',
     ukName: 'Печиво зі світлом',
     price: 720,
-    image: '/images/biscuit-candle.webp',
+    images: ['/images/biscuit-candle.webp', '/images/cookie-2.png'],
     collection: 'Sweet',
     badge: 'cute classic',
     short: 'Найзатишніша форма: ніби домашнє печиво, але це свічка.',
@@ -99,7 +99,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Meringue Bloom',
     ukName: 'Зефірна квітка',
     price: 680,
-    image: '/images/meringue-bloom.webp',
+    images: ['/images/meringue-bloom.webp', '/images/zefir-2.png'],
     collection: 'Floral',
     badge: 'soft',
     short: 'М’які хвилі, кремові й рожеві відтінки та дуже домашня подача.',
@@ -111,7 +111,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Calla Light',
     ukName: 'Світло кали',
     price: 930,
-    image: '/images/calla-lily.webp',
+    images: ['/images/calla-lily.webp', '/images/calla-2.png'],
     collection: 'Floral',
     badge: 'art object',
     short: 'Висока квіткова форма, що виглядає як предмет декору.',
@@ -123,7 +123,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Donut Party',
     ukName: 'Пончиковий настрій',
     price: 710,
-    image: '/images/donut-candles.webp',
+    images: ['/images/donut-candles.webp', '/images/donut-2.png'],
     collection: 'Sweet',
     badge: 'fun gift',
     short: 'Яскраві “пончики” для подарунку, фотосесії або просто гарного настрою.',
@@ -187,6 +187,19 @@ function normalizeProduct(product) {
   };
 }
 
+function hydrateCatalogueProduct(product) {
+  const normalized = normalizeProduct(product);
+  const demo = DEFAULT_PRODUCTS.find(item => item.id === normalized.id);
+  if (!demo) return normalized;
+
+  const demoImages = productImages(demo);
+  const usesBundledPrimary = normalized.images[0] === demoImages[0];
+  if (!usesBundledPrimary) return normalized;
+
+  const images = [...new Set([...normalized.images, ...demoImages])];
+  return { ...normalized, image: images[0] || '', images };
+}
+
 function slugify(value) {
   return String(value || '')
     .toLowerCase()
@@ -199,6 +212,13 @@ function money(v) {
   return `${new Intl.NumberFormat('uk-UA').format(v)} ₴`;
 }
 
+function withViewTransition(update) {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced && document.startViewTransition) return document.startViewTransition(update);
+  update();
+  return null;
+}
+
 function routeFromHash() {
   const raw = window.location.hash.replace(/^#\/?/, '') || 'home';
   const [path, query = ''] = raw.split('?');
@@ -207,8 +227,10 @@ function routeFromHash() {
 }
 
 function go(path) {
-  window.location.hash = `#/${path}`;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  withViewTransition(() => {
+    window.location.hash = `#/${path}`;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  });
 }
 
 function useRoute() {
@@ -224,7 +246,7 @@ function useRoute() {
 function useMotion(dep) {
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const revealNodes = [...document.querySelectorAll('[data-reveal]')];
+    const revealNodes = [...document.querySelectorAll('[data-reveal]:not(.gift-option):not(.care-card)')];
 
     if (reduced || !gsap || !ScrollTrigger) {
       revealNodes.forEach(node => {
@@ -301,19 +323,16 @@ function useMotion(dep) {
         const hero = document.querySelector('.home-hero');
         if (hero) {
           const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-          tl.from('.hero-copy .kicker', { x: -35, autoAlpha: 0, duration: .65 })
-            .from('.hero-copy h1', { y: 48, autoAlpha: 0, duration: .9 }, '-=.35')
-            .from('.hero-copy > p, .hero-actions, .hero-notes', { y: 20, autoAlpha: 0, duration: .6, stagger: .08 }, '-=.55')
-            .from('.hero-photo--main', { x: 90, y: 35, rotate: 9, autoAlpha: 0, duration: 1 }, '-=.85')
-            .from('.hero-photo--small, .hero-sticker', { scale: .72, rotate: -10, autoAlpha: 0, duration: .65, stagger: .09 }, '-=.55');
+          tl.from('.hero-intro', { y: -12, autoAlpha: 0, duration: .5 })
+            .from('.hero-copy .kicker', { y: 18, autoAlpha: 0, duration: .5 }, '-=.2')
+            .from('.hero-copy h1', { y: 54, autoAlpha: 0, duration: .9 }, '-=.3')
+            .from('.hero-copy > p, .hero-actions', { y: 20, autoAlpha: 0, duration: .55, stagger: .08 }, '-=.55')
+            .from('.hero-panel', { clipPath: 'inset(100% 0 0 0)', duration: .95, stagger: .1 }, '-=.85')
+            .from('.hero-caption', { y: 18, autoAlpha: 0, duration: .5 }, '-=.35');
 
-          gsap.to('.hero-photo--main', {
-            yPercent: 10, rotate: 2.5, ease: 'none',
-            scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: 1 },
-          });
-          gsap.to('.hero-photo--small', {
-            yPercent: -14, rotate: -5, ease: 'none',
-            scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: 1.1 },
+          gsap.to('.hero-panel--b img', {
+            yPercent: 5, ease: 'none',
+            scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: 1.2 },
           });
         }
 
@@ -412,6 +431,33 @@ function useMotion(dep) {
             );
         }
 
+        // Gift cards use the same bottom-up mask language as the approved
+        // homepage hero photography, with ScrollTrigger as a reliable fallback.
+        gsap.utils.toArray('.gift-options .gift-option').forEach((card) => {
+          gsap.fromTo(card,
+            { clipPath: 'inset(100% 0 0 0)', y: 34, autoAlpha: 0 },
+            {
+              clipPath: 'inset(0% 0 0 0)', y: 0, autoAlpha: 1, ease: 'none',
+              scrollTrigger: { trigger: card, start: 'top 94%', end: 'top 56%', scrub: .75 },
+            }
+          );
+        });
+
+        // Sticky care stack: each incoming card compresses the previous card,
+        // matching the CodeFronts sticky-card handoff while remaining cross-browser.
+        const careCards = gsap.utils.toArray('.care-grid .care-card');
+        careCards.forEach((card, index) => {
+          const next = careCards[index + 1];
+          if (!next) return;
+          gsap.to(card, {
+            scale: .94,
+            y: index * -3,
+            filter: 'brightness(.9)',
+            ease: 'none',
+            scrollTrigger: { trigger: next, start: 'top 88%', end: 'top 128px', scrub: .7 },
+          });
+        });
+
         // Homepage favourites: vertical wheel/trackpad scrolling becomes a
         // horizontal product journey on desktop. The cards themselves remain
         // stable, so there is no floating image motion inside the frames.
@@ -481,7 +527,7 @@ function ClayButton({ children, className = '', onClick, type = 'button', disabl
   return <button type={type} disabled={disabled} className={`clay-button ${className}`} onClick={onClick}>{children}</button>;
 }
 
-function Header({ cartCount, onCart }) {
+function Header({ cartCount, onCart, activePath }) {
   const [open, setOpen] = useState(false);
   const nav = [
     ['shop', 'Каталог'],
@@ -494,11 +540,11 @@ function Header({ cartCount, onCart }) {
       <div className="header-inner clay-surface clay-surface--glass">
         <Brand compact />
         <nav className={`header-nav ${open ? 'is-open' : ''}`}>
-          {nav.map(([path, label]) => <button key={path} onClick={() => { go(path); setOpen(false); }}>{label}</button>)}
+          {nav.map(([path, label]) => <button key={path} className={activePath===path?'active':''} aria-current={activePath===path?'page':undefined} onClick={() => { go(path); setOpen(false); }}>{label}</button>)}
           <a href={IG} target="_blank" rel="noreferrer">Instagram ↗</a>
         </nav>
         <div className="header-actions">
-          <button className="mini-clay" onClick={onCart}>Кошик <b>{cartCount}</b></button>
+          <button className="mini-clay" onClick={onCart}>Кошик <b className="cart-count" style={{viewTransitionName:'cart-count'}}>{cartCount}</b></button>
           <button className="menu-toggle" aria-label="Menu" onClick={() => setOpen(v => !v)}><i/><i/></button>
         </div>
       </div>
@@ -528,27 +574,21 @@ function HomePage({ addToCart, products }) {
   return (
     <>
       <section className="home-hero" ref={heroRef}>
+        <div className="hero-intro"><span>КИЇВ · МАЛІ СЕРІЇ · 2026</span><span>OBJECTS FOR HOME</span></div>
         <div className="hero-copy" data-reveal>
           <span className="kicker"><i/> handmade candle studio</span>
-          <h1>Свічки, що<br/><em>схожі на спогади.</em></h1>
-          <p>Трохи наївні, дуже тактильні й створені для дому, який хочеться відчувати своїм.</p>
-          <div className="hero-actions">
-            <ClayButton className="clay-button--berry" onClick={() => go('shop')}>Обрати свою <span>↗</span></ClayButton>
-            <button className="soft-link" onClick={() => go('story')}>познайомитися з DOMIVKA</button>
-          </div>
-          <div className="hero-notes">
-            <span>♡ ручна робота</span><span>♡ маленькі серії</span><span>♡ gift-ready</span>
-          </div>
+          <h1>Світло,<br/>яке має<br/>форму.</h1>
+          <p>Авторські свічки-об’єкти для дому, подарунків і тихих особистих ритуалів.</p>
+          <div className="hero-actions"><button className="primary-cta" onClick={() => go('shop')}>Дивитися колекцію <span>↗</span></button><button className="text-cta" onClick={() => go('story')}>Наша історія</button></div>
         </div>
-        <div className="hero-collage" aria-label="DOMIVKA candle collection">
-          <figure className="hero-photo hero-photo--main clay-photo"><img src="/images/pink-carousel-gift.webp" alt="DOMIVKA pink candle gift set"/></figure>
-          <figure className="hero-photo hero-photo--small clay-photo"><img src="/images/pearl-shell.webp" alt="Pearl shell candle"/></figure>
-          <div className="hero-sticker clay-sticker"><span>light me</span><b>♥</b><small>slowly</small></div>
-          <div className="hero-doodle">⌁</div>
+        <div className="hero-gallery" aria-label="DOMIVKA candle collection">
+          <figure className="hero-panel hero-panel--a"><img src="/images/pink-carousel-gift.webp" alt="Рожева подарункова композиція DOMIVKA"/></figure>
+          <figure className="hero-panel hero-panel--b"><img src="/images/pearl-shell.webp" alt="Перлинна свічка у мушлі"/></figure>
+          <figure className="hero-panel hero-panel--c"><img src="/images/meringue-bloom.webp" alt="Скульптурна рожева свічка"/></figure>
+          <div className="hero-caption"><b>01</b><span>Не декор.<br/>Ваш маленький настрій.</span></div>
         </div>
+        <div className="hero-bottom"><span>ручна робота</span><span>подарункове оформлення</span><span>доставка Україною</span></div>
       </section>
-
-      <div className="brand-marquee" aria-hidden="true"><div>{Array.from({length:8}).map((_,i)=><React.Fragment key={i}><span>DOMIVKA</span><i>✿</i><span>MADE TO FEEL LIKE HOME</span><i>♡</i></React.Fragment>)}</div></div>
 
       <section className="section section--collections">
         <div className="section-heading collection-heading">
@@ -596,46 +636,33 @@ function HomePage({ addToCart, products }) {
         </div>
       </section>
 
-      <section className="section gift-callout">
-        <div className="gift-copy" data-reveal>
-          <span className="kicker"><i/> make it personal</span>
-          <h2>Подарунок, який<br/><em>не виглядає випадковим.</em></h2>
-          <p>Підберемо свічку під людину, колір, подію або настрій. Для днів народження, подяк, “просто так” і маленьких свят.</p>
-          <ClayButton className="clay-button--cream" onClick={() => go('gifts')}>Зібрати подарунок ♡</ClayButton>
+      <section className="section gift-story">
+        <div className="gift-story-copy">
+          <span className="kicker"><i/> the art of giving</span>
+          <small>04 / ПОДАРУНКОВИЙ РИТУАЛ</small>
+          <h2>Обрати не річ.<br/><em>Обрати відчуття.</em></h2>
+          <p>Розкажіть нам про людину — ми поєднаємо форму, колір і пакування в один особистий жест.</p>
+          <ClayButton onClick={() => go('gifts')}>Створити подарунок <span>↗</span></ClayButton>
         </div>
-        <div className="gift-photo-stack" aria-hidden="true">
-          <figure className="clay-photo"><img src="/images/donut-candles.webp" alt=""/></figure>
-          <figure className="clay-photo"><img src="/images/pink-carousel-gift.webp" alt=""/></figure>
-          <i className="gift-ribbon">⌇</i>
+        <div className="gift-story-frames">
+          <figure><img src="/images/pink-carousel-gift.webp" alt="Подарунковий набір DOMIVKA"/><figcaption><b>01</b><span>готова композиція</span></figcaption></figure>
+          <figure><img src="/images/donut-candles.webp" alt="Кольорові свічки-пончики"/><figcaption><b>02</b><span>форма з характером</span></figcaption></figure>
+          <figure><img src="/images/pearl-shell.webp" alt="Перлинна свічка у мушлі"/><figcaption><b>03</b><span>деталь, яку пам’ятають</span></figcaption></figure>
         </div>
       </section>
 
-      <section className="section social-diary">
-        <div className="social-diary-copy">
+      <section className="section journal-section journal-section--backdrop">
+        <div className="journal-copy" data-reveal>
           <span className="kicker"><i/> instagram diary</span>
           <h2>Зазирніть у DOMIVKA.<br/><em>Там трохи більше життя.</em></h2>
           <p>Нові форми, пакування, процес і маленькі кадри з майстерні — те, що не завжди потрапляє в каталог.</p>
-          <a className="social-diary-cta" href={IG} target="_blank" rel="noreferrer"><span>@domivka_candles</span><b>Дивитися Instagram ↗</b></a>
-          <div className="social-diary-note"><i/> останні історії бренду — без постановочного відчуття</div>
+          <a className="journal-cta" href={IG} target="_blank" rel="noreferrer"><span>@domivka_candles</span><b>Дивитися Instagram ↗</b></a>
         </div>
-
-        <div className="social-orbit-shell" aria-label="DOMIVKA Instagram gallery">
-          <span className="social-orbit-line" aria-hidden="true"/>
-          <div className="social-orbit">
-            {[
-              ['crystal-shoes','01','social-orbit-pos-1'],
-              ['calla-lily','02','social-orbit-pos-2'],
-              ['biscuit-candle','03','social-orbit-pos-3'],
-              ['meringue-bloom','04','social-orbit-pos-4'],
-              ['coconut-candle','05','social-orbit-pos-5'],
-            ].map(([name,index,pos]) => <a key={name} className={`social-orbit-node ${pos}`} href={IG} target="_blank" rel="noreferrer" aria-label={`Instagram post ${index}`}><figure className="social-orbit-card"><img src={`/images/${name}.webp`} alt="DOMIVKA candle" loading="lazy"/><span>{index}</span></figure></a>)}
-          </div>
-          <a className="social-orbit-center" href={IG} target="_blank" rel="noreferrer" aria-label="DOMIVKA Instagram">
-            <img src="/images/pearl-shell.webp" alt="DOMIVKA pearl shell candle" loading="lazy"/>
-            <span><small>inside DOMIVKA</small><b>tap to enter ↗</b></span>
-          </a>
-        </div>
+        <a className="journal-backdrop-link" href={IG} target="_blank" rel="noreferrer" aria-label="Відкрити Instagram DOMIVKA">
+          <span>05 / studio diary</span><b>Живі кадри з майстерні ↗</b>
+        </a>
       </section>
+      <div className="landing-footer-space" aria-hidden="true"/>
     </>
   );
 }
@@ -661,8 +688,9 @@ function ProductCard({ product, addToCart }) {
   const photos = productImages(product);
   return (
     <article className="product-card">
-      <button className="product-image clay-photo" onClick={() => go(`product/${product.id}`)}>
-        <img src={photos[0]} alt={`${product.name} candle by DOMIVKA`} loading="lazy"/>
+      <button className="product-image clay-photo" style={{viewTransitionName:`product-${product.id}`}} onClick={() => go(`product/${product.id}`)}>
+        <img className="product-image-primary" src={photos[0]} alt={`${product.name} candle by DOMIVKA`} loading="lazy"/>
+        {photos[1] && <img className="product-image-secondary" src={photos[1]} alt={`${product.name} candle — alternate view`} loading="lazy"/>}
         <span className="product-badge clay-pill">{product.badge}</span>
         {photos.length > 1 && <span className="product-photo-count clay-pill">{photos.length} фото</span>}
         <i className="product-open">↗</i>
@@ -715,7 +743,7 @@ function ProductPage({ id, addToCart, products }) {
     <>
       <section className="product-page section">
         <div className="product-gallery">
-          <figure className="product-main-image clay-photo">
+          <figure className="product-main-image product-selection-gallery clay-photo" style={{viewTransitionName:`product-${product.id}`}}>
             <img src={photos[photoIndex] || photos[0]} alt={`${product.name} — photo ${photoIndex + 1}`}/>
             {photos.length > 1 && <>
               <button className="gallery-arrow gallery-arrow--prev" type="button" onClick={showPrev} aria-label="Попереднє фото">←</button>
@@ -786,7 +814,12 @@ function StoryPage() {
         ].map(v=><article className="value-card clay-surface" key={v[0]} data-reveal><span>{v[0]}</span><h3>{v[1]}</h3><p>{v[2]}</p></article>)}
       </section>
       <section className="section image-story-grid">
-        {['croissant-heart','crystal-shoes','calla-lily','coconut-candle'].map((x,i)=><figure key={x} className={`clay-photo image-story-${i+1}`}><img src={`/images/${x}.webp`} alt="DOMIVKA brand photography"/></figure>)}
+        {[
+          ['croissant-heart','01','гра як частина дому'],
+          ['crystal-shoes','02','об’єкт, а не просто свічка'],
+          ['calla-lily','03','форма, що пам’ятається'],
+          ['coconut-candle','04','ритуал без поспіху'],
+        ].map(([x,note,label],i)=><figure key={x} className={`clay-photo image-story-${i+1}`}><img src={`/images/${x}.webp`} alt="DOMIVKA brand photography"/><figcaption><b>{note}</b><span>{label}</span></figcaption></figure>)}
       </section>
     </>
   );
@@ -798,24 +831,50 @@ function CarePage() {
       <PageHero eyebrow="care / 04" title={<>Щоб красиво було<br/><em>не лише перші 5 хвилин.</em></>} copy="Короткий гайд: як поводитися зі свічкою, декором і ґнотом, щоб ритуал залишався приємним." image="/images/coconut-candle.webp" />
       <section className="section care-grid">
         {[
-          ['01','Перший вогонь','Дайте верхньому шару воску прогрітися рівномірно. Це допомагає уникати глибокого “тунелю”.'],
-          ['02','Коротший ґніт','Перед наступним запалюванням приберіть зайву обвуглену частину ґноту. Полум’я буде спокійнішим.'],
-          ['03','Без протягів','Не ставте свічку біля відкритого вікна, вентилятора або на нестійку поверхню.'],
-          ['04','Скульптурні форми','Декоративні свічки краще ставити на жаростійку тарілку: форма може плавитися нерівномірно — це частина її характеру.'],
-          ['05','Не залишайте саму','Ніколи не залишайте запалену свічку без нагляду та тримайте подалі від дітей і тварин.'],
-          ['06','Після свічки','Красиву ємність можна очистити й використати як маленьку вазу, підставку або контейнер.'],
-        ].map(c=><article className="care-card clay-surface" key={c[0]} data-reveal><span>{c[0]}</span><h3>{c[1]}</h3><p>{c[2]}</p></article>)}
+          ['01','Перший вогонь','Дайте верхньому шару воску прогрітися рівномірно. Це допомагає уникати глибокого “тунелю”.','pool'],
+          ['02','Коротший ґніт','Перед наступним запалюванням приберіть зайву обвуглену частину ґноту. Полум’я буде спокійнішим.','wick'],
+          ['03','Без протягів','Не ставте свічку біля відкритого вікна, вентилятора або на нестійку поверхню.','wind'],
+          ['04','Скульптурні форми','Декоративні свічки краще ставити на жаростійку тарілку: форма може плавитися нерівномірно — це частина її характеру.','plate'],
+          ['05','Не залишайте саму','Ніколи не залишайте запалену свічку без нагляду та тримайте подалі від дітей і тварин.','watch'],
+          ['06','Після свічки','Красиву ємність можна очистити й використати як маленьку вазу, підставку або контейнер.','reuse'],
+        ].map((c,index)=><article className="care-card clay-surface" style={{'--card-index':index}} key={c[0]} data-reveal>
+          <div className="care-card-index"><span>{c[0]}</span><i aria-hidden="true"/></div>
+          <div className="care-card-copy"><h3>{c[1]}</h3><p>{c[2]}</p></div>
+          <CareIcon type={c[3]} />
+        </article>)}
       </section>
       <section className="section material-note"><div className="clay-surface" data-reveal><span className="kicker"><i/> materials</span><h2>Матеріал — це частина історії.</h2><p>Для production-версії біля кожного SKU варто показати точний тип воску, ґніт, аромат і рекомендації саме для цієї форми. У демо ці дані навмисно не вигадані.</p></div></section>
     </>
   );
 }
 
+function CareIcon({ type }) {
+  const art = {
+    pool: <><path d="M30 14c8 10 12 16 12 23a12 12 0 0 1-24 0c0-7 4-13 12-23Z"/><path d="M22 38c3 3 13 3 16 0"/></>,
+    wick: <><path d="M31 15v19"/><path d="M31 15c-6 6-7 11 0 15 7-4 6-9 0-15Z"/><path d="M18 41h26M23 48h16"/></>,
+    wind: <><path d="M13 25h27c7 0 7-9 1-9-3 0-5 2-5 4"/><path d="M13 34h34c8 0 8 10 1 10-4 0-5-2-5-4"/><path d="M13 43h20"/></>,
+    plate: <><path d="M17 40c8 8 22 8 30 0"/><path d="M14 40h36"/><path d="M25 36V22l7-7 7 7v14"/></>,
+    watch: <><path d="M11 32s8-12 21-12 21 12 21 12-8 12-21 12S11 32 11 32Z"/><circle cx="32" cy="32" r="5"/><path d="M32 15v-4"/></>,
+    reuse: <><path d="M23 27h18l-2 23H25l-2-23Z"/><path d="M28 27v-6h8v6"/><path d="M32 21c0-7 5-10 10-10-1 6-4 10-10 10Z"/></>,
+  };
+  return <div className="care-card-mark" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{art[type]}</svg></div>;
+}
+
 function PageHero({ eyebrow, title, copy, image }) {
+  const variant = eyebrow.split('/')[0].trim();
+  const actions = {
+    shop: ['Перейти до колекції', '.shop-section'],
+    gifts: ['Обрати формат подарунка', '.gift-options'],
+    story: ['Читати історію', '.manifesto'],
+    care: ['Відкрити гайд', '.care-grid'],
+  };
+  const [actionLabel, actionTarget] = actions[variant] || ['Дивитися далі', `.${variant}-grid`];
   return (
-    <section className="page-hero">
-      <div data-reveal><span className="kicker"><i/> {eyebrow}</span><h1>{title}</h1><p>{copy}</p></div>
-      <figure className="clay-photo" data-reveal><img src={image} alt="DOMIVKA candle"/></figure>
+    <section className={`page-hero page-hero--${variant}`}>
+      <div className="page-hero-index"><span>DOMIVKA / {variant}</span><b>{eyebrow}</b></div>
+      <div className="page-hero-copy" data-reveal><span className="kicker"><i/> {eyebrow}</span><h1>{title}</h1><p>{copy}</p><button className="page-hero-action" onClick={()=>document.querySelector(actionTarget)?.scrollIntoView({behavior:'smooth'})}>{actionLabel} <span>↓</span></button></div>
+      <figure className="page-hero-media" data-reveal><img src={image} alt="DOMIVKA candle"/><figcaption><span>handmade in Ukraine</span><b>↘</b></figcaption></figure>
+      <div className="page-hero-seal" aria-hidden="true">D</div>
     </section>
   );
 }
@@ -1216,7 +1275,7 @@ function Footer() {
 function App() {
   const route = useRoute();
   const [cart, setCart] = useState(()=>{try{return JSON.parse(localStorage.getItem('domivka-cart-v2'))||[]}catch{return[]}});
-  const [products, setProducts] = useState(()=>{try{const saved=JSON.parse(localStorage.getItem('domivka-products-v1'));return (saved||DEFAULT_PRODUCTS).map(normalizeProduct)}catch{return DEFAULT_PRODUCTS.map(normalizeProduct)}});
+  const [products, setProducts] = useState(()=>{try{const saved=JSON.parse(localStorage.getItem('domivka-products-v1'));return (saved||DEFAULT_PRODUCTS).map(hydrateCatalogueProduct)}catch{return DEFAULT_PRODUCTS.map(hydrateCatalogueProduct)}});
   const [categories, setCategories] = useState(()=>{try{const saved=JSON.parse(localStorage.getItem('domivka-categories-v1'));if(Array.isArray(saved))return saved;const oldProducts=JSON.parse(localStorage.getItem('domivka-products-v1'))||[];return [...new Set([...DEFAULT_CATEGORIES,...oldProducts.flatMap(productCategories)])]}catch{return DEFAULT_CATEGORIES}});
   const [adminAuthed, setAdminAuthed] = useState(()=>localStorage.getItem('domivka-admin-auth') === '1' || Boolean(localStorage.getItem('domivka-admin-token')));
   const [cartOpen, setCartOpen] = useState(false);
@@ -1233,7 +1292,7 @@ function App() {
       fetch(`${CATALOG_API}/products`).then(r=>r.ok?r.json():Promise.reject()),
       fetch(`${CATALOG_API}/categories`).then(r=>r.ok?r.json():Promise.reject()),
     ]).then(([productData,categoryData])=>{
-      if(Array.isArray(productData)) setProducts(productData.map(normalizeProduct));
+      if(Array.isArray(productData)) setProducts(productData.map(hydrateCatalogueProduct));
       if(Array.isArray(categoryData)) setCategories(categoryData.map(String).filter(Boolean));
     }).catch(()=>{});
   },[]);
@@ -1324,7 +1383,7 @@ function App() {
   const resetProducts = () => {setProducts(DEFAULT_PRODUCTS.map(normalizeProduct)); if(!CATALOG_API)localStorage.setItem('domivka-products-v1',JSON.stringify(DEFAULT_PRODUCTS.map(normalizeProduct)));};
 
   const addToCart = product => {
-    setCart(prev=>{const found=prev.find(x=>x.id===product.id);return found?prev.map(x=>x.id===product.id?{...x,qty:x.qty+1}:x):[...prev,{...product,qty:1}]});
+    withViewTransition(()=>setCart(prev=>{const found=prev.find(x=>x.id===product.id);return found?prev.map(x=>x.id===product.id?{...x,qty:x.qty+1}:x):[...prev,{...product,qty:1}]}));
     setToast(`${product.ukName} — у кошику ♡`); setTimeout(()=>setToast(''),1600);
   };
   const updateQty=(id,d)=>setCart(prev=>prev.map(x=>x.id===id?{...x,qty:x.qty+d}:x).filter(x=>x.qty>0));
@@ -1339,7 +1398,7 @@ function App() {
   else if(route.page==='admin') page=<AdminPage products={products} categories={categories} adminAuthed={adminAuthed} onLogin={loginAdmin} onLogout={logoutAdmin} onSaveProduct={saveProduct} onDeleteProduct={deleteProduct} onResetProducts={resetProducts} onAddCategory={addCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory}/>;
   else page=<HomePage addToCart={addToCart} products={products}/>;
   const isAdmin = route.page === 'admin';
-  return <div className="app"><BackgroundLayers/>{!isAdmin&&<Header cartCount={count} onCart={()=>setCartOpen(true)}/>}<main>{page}</main>{!isAdmin&&<Footer/>}{!isAdmin&&<CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)} cart={cart} updateQty={updateQty} subtotal={subtotal}/>} {toast&&<div className="toast clay-surface">{toast}</div>}</div>;
+  return <div className={`app ${isAdmin ? 'is-admin' : 'is-public'}`}><BackgroundLayers/>{!isAdmin&&<Header activePath={route.page} cartCount={count} onCart={()=>setCartOpen(true)}/>}<main>{page}</main>{!isAdmin&&<Footer/>}{!isAdmin&&<CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)} cart={cart} updateQty={updateQty} subtotal={subtotal}/>} {toast&&<div className="toast clay-surface">{toast}</div>}</div>;
 }
 
 
