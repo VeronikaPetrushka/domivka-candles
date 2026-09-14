@@ -516,7 +516,6 @@ function Brand({ compact = false }) {
     <button className={`brand ${compact ? 'brand--compact' : ''}`} onClick={() => go('home')} aria-label="DOMIVKA home">
       <img className="brand-logo-image" src="/images/domivka-logo.webp" alt="" aria-hidden="true" />
       <span className="brand-copy">
-        <span className="brand-word">DOMIVKA</span>
         {!compact && <small>candles · made with feeling</small>}
       </span>
     </button>
