@@ -1397,6 +1397,93 @@ function Footer() {
   return <footer className="site-footer"><div className="footer-top"><Brand/><div><small>SHOP</small><button onClick={()=>go('shop')}>Каталог</button><button onClick={()=>go('gifts')}>Подарунки</button><button onClick={()=>go('care')}>Догляд</button></div><div><small>DOMIVKA</small><button onClick={()=>go('story')}>Історія</button><a href={IG} target="_blank" rel="noreferrer">Instagram ↗</a></div><div className="footer-note clay-surface"><b>Нагадування:</b><p>погані дні теж можна підсвітити красивою свічкою.</p><span>♡</span></div></div><div className="footer-bottom"><span>© 2026 DOMIVKA</span><span>made to feel like home</span><span>UA · handmade candle studio</span><button className="footer-admin" onClick={()=>go('admin')}>Admin</button></div></footer>;
 }
 
+
+function PinkyCursor() {
+  const cursorRef = useRef(null);
+  const labelRef = useRef(null);
+
+  useEffect(() => {
+    const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (!canHover) return undefined;
+
+    const root = cursorRef.current;
+    if (!root) return undefined;
+
+    const interactiveSelector = [
+      'a', 'button', 'summary', 'input', 'textarea', 'select', 'label',
+      '[role="button"]', '[data-cursor]', '.product-card', '.gift-card',
+      '.collection-card', '.story-card', '.journal-card', '.hero-card'
+    ].join(',');
+
+    document.documentElement.classList.add('has-pinky-cursor');
+
+    let pointerX = window.innerWidth / 2;
+    let pointerY = window.innerHeight / 2;
+    let renderX = pointerX;
+    let renderY = pointerY;
+    let raf = 0;
+    let visible = false;
+
+    const setVisible = (value) => {
+      visible = value;
+      root.classList.toggle('is-visible', value);
+    };
+
+    const setInteractive = (target) => {
+      const hit = target?.closest?.(interactiveSelector);
+      root.classList.toggle('is-active', Boolean(hit));
+      const label = hit?.getAttribute?.('data-cursor') || '';
+      root.classList.toggle('has-label', Boolean(label));
+      if (labelRef.current) labelRef.current.textContent = label;
+    };
+
+    const tick = () => {
+      renderX += (pointerX - renderX) * 0.16;
+      renderY += (pointerY - renderY) * 0.16;
+      root.style.transform = `translate3d(${renderX}px, ${renderY}px, 0)`;
+      raf = requestAnimationFrame(tick);
+    };
+
+    const onMove = (event) => {
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      if (!visible) setVisible(true);
+      setInteractive(event.target);
+    };
+
+    const onDown = () => root.classList.add('is-pressed');
+    const onUp = () => root.classList.remove('is-pressed');
+    const onLeave = () => setVisible(false);
+    const onEnter = () => setVisible(true);
+
+    raf = requestAnimationFrame(tick);
+    window.addEventListener('mousemove', onMove, { passive: true });
+    window.addEventListener('mousedown', onDown, { passive: true });
+    window.addEventListener('mouseup', onUp, { passive: true });
+    document.addEventListener('mouseleave', onLeave);
+    document.addEventListener('mouseenter', onEnter);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('mouseenter', onEnter);
+      document.documentElement.classList.remove('has-pinky-cursor');
+    };
+  }, []);
+
+  return (
+    <div className="pinky-cursor" ref={cursorRef} aria-hidden="true">
+      <span className="pinky-cursor__glow" />
+      <span className="pinky-cursor__ring" />
+      <span className="pinky-cursor__dot" />
+      <span className="pinky-cursor__label" ref={labelRef} />
+    </div>
+  );
+}
+
 function App() {
   const route = useRoute();
   const [cart, setCart] = useState(()=>{try{return JSON.parse(localStorage.getItem('domivka-cart-v2'))||[]}catch{return[]}});
@@ -1523,7 +1610,7 @@ function App() {
   else if(route.page==='admin') page=<AdminPage products={products} categories={categories} adminAuthed={adminAuthed} onLogin={loginAdmin} onLogout={logoutAdmin} onSaveProduct={saveProduct} onDeleteProduct={deleteProduct} onResetProducts={resetProducts} onAddCategory={addCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory}/>;
   else page=<HomePage addToCart={addToCart} products={products}/>;
   const isAdmin = route.page === 'admin';
-  return <div className={`app ${isAdmin ? 'is-admin' : 'is-public'}`}><BackgroundLayers/>{!isAdmin&&<Header activePath={route.page} cartCount={count} onCart={()=>setCartOpen(true)}/>}<main>{page}</main>{!isAdmin&&<Footer/>}{!isAdmin&&<CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)} cart={cart} updateQty={updateQty} subtotal={subtotal}/>} {toast&&<div className="toast clay-surface">{toast}</div>}</div>;
+  return <div className={`app ${isAdmin ? 'is-admin' : 'is-public'}`}><BackgroundLayers/>{!isAdmin&&<PinkyCursor/>}{!isAdmin&&<Header activePath={route.page} cartCount={count} onCart={()=>setCartOpen(true)}/>}<main>{page}</main>{!isAdmin&&<Footer/>}{!isAdmin&&<CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)} cart={cart} updateQty={updateQty} subtotal={subtotal}/>} {toast&&<div className="toast clay-surface">{toast}</div>}</div>;
 }
 
 
