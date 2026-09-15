@@ -165,8 +165,35 @@ function serveStatic(req, res) {
   if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(distDir, 'index.html');
   if (!fs.existsSync(file)) return false;
   const ext = path.extname(file);
-  const types = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.ico':'image/x-icon'};
-  res.writeHead(200, {'Content-Type': types[ext] || 'application/octet-stream'});
+  const types = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.ico':'image/x-icon','.mp4':'video/mp4'};
+  const type = types[ext] || 'application/octet-stream';
+  const stat = fs.statSync(file);
+  const range = req.headers.range;
+  if (ext === '.mp4' && range) {
+    const match = /bytes=(\d*)-(\d*)/.exec(range);
+    const start = match && match[1] ? Number(match[1]) : 0;
+    const end = Math.min(match && match[2] ? Number(match[2]) : stat.size - 1, stat.size - 1);
+    if (start >= stat.size || start > end) {
+      res.writeHead(416, {'Content-Range': `bytes */${stat.size}`});
+      res.end();
+      return true;
+    }
+    res.writeHead(206, {
+      'Content-Type': type,
+      'Accept-Ranges': 'bytes',
+      'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+      'Content-Length': end - start + 1,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    });
+    fs.createReadStream(file, {start, end}).pipe(res);
+    return true;
+  }
+  const headers = {'Content-Type': type, 'Content-Length': stat.size};
+  if (ext === '.mp4') {
+    headers['Accept-Ranges'] = 'bytes';
+    headers['Cache-Control'] = 'public, max-age=31536000, immutable';
+  }
+  res.writeHead(200, headers);
   fs.createReadStream(file).pipe(res);
   return true;
 }

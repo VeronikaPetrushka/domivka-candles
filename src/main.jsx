@@ -263,10 +263,19 @@ function useMotion(dep) {
           { y: 0, autoAlpha: 1, duration: .8, ease: 'power3.out', clearProps: 'transform' }
         );
 
-        gsap.fromTo('main',
-          { autoAlpha: 0, y: 12 },
-          { autoAlpha: 1, y: 0, duration: .55, ease: 'power2.out', clearProps: 'transform' }
-        );
+        if (document.querySelector('.scroll-film')) {
+          // A transformed ancestor breaks position:sticky in several browsers.
+          // The landing film therefore fades in without translating <main>.
+          gsap.fromTo('main',
+            { autoAlpha: 0 },
+            { autoAlpha: 1, duration: .45, ease: 'power2.out', clearProps: 'opacity,visibility' }
+          );
+        } else {
+          gsap.fromTo('main',
+            { autoAlpha: 0, y: 12 },
+            { autoAlpha: 1, y: 0, duration: .55, ease: 'power2.out', clearProps: 'transform' }
+          );
+        }
 
         // Clean, consistent section entrances. Elements no longer fly in from
         // alternating sides or drift away again while the user keeps scrolling.
@@ -555,41 +564,158 @@ function BackgroundLayers() {
   return <div className="ambient" aria-hidden="true"><i className="blob blob-a"/><i className="blob blob-b"/><i className="blob blob-c"/><i className="scribble"/></div>;
 }
 
-function HomePage({ addToCart, products }) {
-  const heroRef = useRef(null);
+
+function ScrollFilmHero() {
+  const sectionRef = useRef(null);
+  const videoRef = useRef(null);
+  const durationRef = useRef(10);
+  const rafRef = useRef(0);
+
   useEffect(() => {
-    const el = heroRef.current;
-    if (!el) return;
-    const pointer = e => {
-      const r = el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width - .5;
-      const y = (e.clientY - r.top) / r.height - .5;
-      el.style.setProperty('--mx', x.toFixed(3));
-      el.style.setProperty('--my', y.toFixed(3));
+    const section = sectionRef.current;
+    const video = videoRef.current;
+    if (!section || !video) return;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let destroyed = false;
+
+    const copies = [...section.querySelectorAll('[data-film-copy]')].map((node) => ({
+      node,
+      start: Number(node.dataset.start || 0),
+      end: Number(node.dataset.end || 1),
+    }));
+
+    const paintCopy = (progress) => {
+      copies.forEach(({ node, start, end }) => {
+        const fade = Math.min(.08, Math.max(.035, (end - start) * .28));
+        const fadeIn = Math.min(1, Math.max(0, (progress - start) / fade));
+        const fadeOut = Math.min(1, Math.max(0, (end - progress) / fade));
+        const opacity = Math.min(fadeIn, fadeOut);
+        const drift = (1 - opacity) * 18;
+        node.style.opacity = opacity.toFixed(3);
+        node.style.transform = `translate3d(0, ${drift.toFixed(1)}px, 0)`;
+        node.style.pointerEvents = opacity > .55 ? 'auto' : 'none';
+      });
     };
-    el.addEventListener('pointermove', pointer);
-    return () => el.removeEventListener('pointermove', pointer);
+
+    const update = () => {
+      rafRef.current = 0;
+      if (destroyed) return;
+      const rect = section.getBoundingClientRect();
+      const sticky = section.querySelector('.scroll-film-sticky');
+      const stageHeight = sticky?.getBoundingClientRect().height || window.innerHeight;
+      const travel = Math.max(1, section.offsetHeight - stageHeight);
+      const progress = Math.min(1, Math.max(0, -rect.top / travel));
+      section.style.setProperty('--film-progress', progress.toFixed(4));
+      paintCopy(progress);
+
+      if (reduced) return;
+      const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : durationRef.current;
+      const target = Math.min(Math.max(progress * Math.max(.01, duration - .035), .001), Math.max(.001, duration - .02));
+      if (video.readyState >= 2 && Math.abs(video.currentTime - target) > .018) {
+        try { video.currentTime = target; } catch {}
+      }
+    };
+
+    const requestUpdate = () => {
+      if (!rafRef.current) rafRef.current = requestAnimationFrame(update);
+    };
+
+    const onMeta = () => {
+      if (Number.isFinite(video.duration) && video.duration > 0) durationRef.current = video.duration;
+      video.pause();
+      if (reduced) {
+        try { video.currentTime = Math.max(.001, video.duration - .05); } catch {}
+        paintCopy(1);
+      } else {
+        try { video.currentTime = .001; } catch {}
+        requestUpdate();
+      }
+    };
+
+    video.addEventListener('loadedmetadata', onMeta);
+    video.addEventListener('canplay', requestUpdate);
+    window.addEventListener('scroll', requestUpdate, { passive: true });
+    window.addEventListener('resize', requestUpdate, { passive: true });
+    window.addEventListener('orientationchange', requestUpdate, { passive: true });
+    window.visualViewport?.addEventListener('resize', requestUpdate, { passive: true });
+    paintCopy(reduced ? 1 : 0);
+    if (video.readyState >= 1) onMeta();
+    else video.load();
+
+    return () => {
+      destroyed = true;
+      cancelAnimationFrame(rafRef.current);
+      video.removeEventListener('loadedmetadata', onMeta);
+      video.removeEventListener('canplay', requestUpdate);
+      window.removeEventListener('scroll', requestUpdate);
+      window.removeEventListener('resize', requestUpdate);
+      window.removeEventListener('orientationchange', requestUpdate);
+      window.visualViewport?.removeEventListener('resize', requestUpdate);
+    };
   }, []);
+
+  return (
+    <section className="scroll-film" ref={sectionRef} aria-label="DOMIVKA Pink Carousel story">
+      <div className="scroll-film-sticky">
+        <div className="scroll-film-media">
+          <video
+            ref={videoRef}
+            className="scroll-film-video"
+            src="/video/candle-scroll.mp4"
+            poster="/video/candle-scroll-poster.png"
+            preload="auto"
+            muted
+            playsInline
+            disablePictureInPicture
+            controlsList="nodownload noplaybackrate noremoteplayback"
+            tabIndex="-1"
+            aria-hidden="true"
+          />
+        </div>
+        <div className="scroll-film-vignette" aria-hidden="true" />
+        <div className="scroll-film-topline" aria-hidden="true">
+          <span>DOMIVKA / PINK CAROUSEL</span><span>SCROLL TO OPEN</span>
+        </div>
+
+        <article className="film-copy film-copy--left film-copy--intro" data-film-copy data-start="0" data-end="0.28">
+          <small>01 / ОБʼЄКТ</small>
+          <h1>Світло,<br/>яке має<br/>форму.</h1>
+          <p>Карусель, що спершу працює як красивий обʼєкт — а потім стає вашим вечірнім ритуалом.</p>
+        </article>
+
+        <article className="film-copy film-copy--right film-copy--open" data-film-copy data-start="0.2" data-end="0.54">
+          <small>02 / ВІДКРИТИ</small>
+          <h2>Трохи<br/><em>магії</em><br/>всередині.</h2>
+          <p>Повільно відкрийте кришку. Усередині — кремовий віск і два деревʼяні ґноти.</p>
+        </article>
+
+        <article className="film-copy film-copy--left film-copy--light" data-film-copy data-start="0.48" data-end="0.78">
+          <small>03 / ЗАПАЛИТИ</small>
+          <h2>Два ґноти.<br/>Тепліше<br/><em>світло.</em></h2>
+          <p>Полумʼя оживляє золото, рожеву кераміку і весь простір навколо.</p>
+        </article>
+
+        <article className="film-copy film-copy--right film-copy--finish" data-film-copy data-start="0.72" data-end="1.01">
+          <small>04 / ЗАЛИШИТИСЯ</small>
+          <h2>Зробити<br/>вечір<br/><em>своїм.</em></h2>
+          <p>Не просто свічка. Маленький предмет настрою — для дому, подарунку і паузи тільки для себе.</p>
+          <button className="film-cta" onClick={() => go('shop')}>Дивитися колекцію <span>↗</span></button>
+        </article>
+
+        <div className="scroll-film-progress" aria-hidden="true"><i /></div>
+        <div className="scroll-film-hint" aria-hidden="true"><span>SCROLL</span><i>↓</i></div>
+      </div>
+    </section>
+  );
+}
+
+function HomePage({ addToCart, products }) {
   return (
     <>
-      <section className="home-hero" ref={heroRef}>
-        <div className="hero-intro"><span>КИЇВ · МАЛІ СЕРІЇ · 2026</span><span>OBJECTS FOR HOME</span></div>
-        <div className="hero-copy" data-reveal>
-          <span className="kicker"><i/> handmade candle studio</span>
-          <h1>Світло,<br/>яке має<br/>форму.</h1>
-          <p>Авторські свічки-об’єкти для дому, подарунків і тихих особистих ритуалів.</p>
-          <div className="hero-actions"><button className="primary-cta" onClick={() => go('shop')}>Дивитися колекцію <span>↗</span></button><button className="text-cta" onClick={() => go('story')}>Наша історія</button></div>
-        </div>
-        <div className="hero-gallery" aria-label="DOMIVKA candle collection">
-          <figure className="hero-panel hero-panel--a"><img src="/images/pink-carousel-gift.webp" alt="Рожева подарункова композиція DOMIVKA"/></figure>
-          <figure className="hero-panel hero-panel--b"><img src="/images/pearl-shell.webp" alt="Перлинна свічка у мушлі"/></figure>
-          <figure className="hero-panel hero-panel--c"><img src="/images/meringue-bloom.webp" alt="Скульптурна рожева свічка"/></figure>
-          <div className="hero-caption"><b>01</b><span>Не декор.<br/>Ваш маленький настрій.</span></div>
-        </div>
-        <div className="hero-bottom"><span>ручна робота</span><span>подарункове оформлення</span><span>доставка Україною</span></div>
-      </section>
+      <ScrollFilmHero />
 
-      <section className="section section--collections">
+      <section className="section section--collections home-after-film">
         <div className="section-heading collection-heading">
           <div>
             <span className="kicker"><i/> choose a mood</span>
@@ -608,7 +734,7 @@ function HomePage({ addToCart, products }) {
         </div>
       </section>
 
-      <section className="section story-teaser">
+      <section className="section story-teaser home-after-film">
         <div className="story-teaser-copy" data-reveal>
           <span className="kicker"><i/> the feeling</span>
           <h2>DOMIVKA — це про <em>“вдома”.</em></h2>
@@ -622,7 +748,7 @@ function HomePage({ addToCart, products }) {
         </div>
       </section>
 
-      <section className="section bestsellers bestsellers-horizontal">
+      <section className="section bestsellers bestsellers-horizontal home-after-film">
         <div className="section-heading section-heading--row bestsellers-heading" data-reveal>
           <div><span className="kicker"><i/> little favourites</span><h2>Зараз хочеться <em>ось це.</em></h2></div>
           <ClayButton onClick={() => go('shop')}>Весь каталог ↗</ClayButton>
@@ -635,7 +761,7 @@ function HomePage({ addToCart, products }) {
         </div>
       </section>
 
-      <section className="section gift-story">
+      <section className="section gift-story home-after-film">
         <div className="gift-story-copy">
           <span className="kicker"><i/> the art of giving</span>
           <small>04 / ПОДАРУНКОВИЙ РИТУАЛ</small>
@@ -650,7 +776,7 @@ function HomePage({ addToCart, products }) {
         </div>
       </section>
 
-      <section className="section journal-section journal-section--backdrop">
+      <section className="section journal-section journal-section--backdrop home-after-film">
         <div className="journal-copy" data-reveal>
           <span className="kicker"><i/> instagram diary</span>
           <h2>Зазирніть у DOMIVKA.<br/><em>Там трохи більше життя.</em></h2>

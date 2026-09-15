@@ -1207,3 +1207,18 @@ API:
 The storefront now uses GSAP + ScrollTrigger for route entrances, scroll reveals, parallax, product-card motion, hero depth and the circular Instagram diary gallery. GSAP is loaded from jsDelivr in `index.html`; if it cannot load, the site falls back to the static layout instead of hiding content.
 
 The redesigned Instagram section is in `HomePage` (`src/main.jsx`) under `.social-diary`, with its responsive styling at the end of `src/styles.css`.
+
+## Scroll-controlled landing film
+
+The landing page now opens with a sticky, scroll-scrubbed Pink Carousel film. The video does **not autoplay**: scroll position maps directly to video time, so scrolling upward automatically plays the sequence in reverse. After the film reaches its last frame, normal page scrolling continues into the collection.
+
+Assets:
+- `public/video/candle-scroll.mp4` — web-optimized H.264 with frequent keyframes for responsive seeking
+- `public/video/candle-scroll-poster.png` — initial frame/poster
+
+Implementation:
+- `ScrollFilmHero` in `src/main.jsx`
+- `.scroll-film*` styles at the end of `src/styles.css`
+- the Node static server supports MP4 byte-range requests for smooth seeking in production
+
+`prefers-reduced-motion` users receive the final static product state instead of a long scrub sequence.

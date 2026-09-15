@@ -7426,3 +7426,775 @@ em{
   }
 }
 
+
+/* ========================================================================== */
+/*  Landing film — scroll-controlled Pink Carousel                            */
+/* ========================================================================== */
+.scroll-film{
+  --film-progress: 0;
+  position: relative;
+  z-index: 3;
+  height: 560svh;
+  width: 100%;
+  background: #f6d8df;
+}
+
+.scroll-film-sticky{
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100svh;
+  min-height: 620px;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 18% 18%,rgba(247,193,211,.92),transparent 36%),
+    radial-gradient(circle at 82% 20%,rgba(249,226,157,.86),transparent 36%),
+    linear-gradient(118deg,#f4cbd8 0%,#f7ddc6 52%,#f4e2a7 100%);
+}
+
+.scroll-film-media{
+  --film-edge-x: clamp(28px,4vw,88px);
+  --film-edge-y: clamp(20px,3.5vh,68px);
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: linear-gradient(112deg,#f6cbd7 0%,#f6dec4 54%,#f4e1aa 100%);
+}
+
+.scroll-film-media::before,
+.scroll-film-media::after{
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Feather the rectangular video boundary into the landing gradient so the
+   frame does not read as a hard embedded box on any device. */
+.scroll-film-media::before{
+  z-index: 2;
+  background:
+    linear-gradient(180deg,rgba(246,205,217,.88) 0%,rgba(246,205,217,.2) 11%,transparent 24%,transparent 76%,rgba(248,231,190,.18) 89%,rgba(248,231,190,.82) 100%),
+    linear-gradient(90deg,rgba(246,206,218,.72) 0%,rgba(246,206,218,.12) 10%,transparent 22%,transparent 78%,rgba(248,231,190,.12) 90%,rgba(248,231,190,.72) 100%);
+  mix-blend-mode: normal;
+}
+
+.scroll-film-media::after{
+  z-index: 3;
+  background: rgba(255,255,255,.01);
+  -webkit-backdrop-filter: blur(24px) saturate(1.04);
+  backdrop-filter: blur(24px) saturate(1.04);
+  -webkit-mask-image:
+    linear-gradient(180deg,#000 0%,#000 var(--film-edge-y),transparent calc(var(--film-edge-y) * 2.2),transparent calc(100% - var(--film-edge-y) * 2.2),#000 calc(100% - var(--film-edge-y)),#000 100%),
+    linear-gradient(90deg,#000 0%,#000 var(--film-edge-x),transparent calc(var(--film-edge-x) * 2.2),transparent calc(100% - var(--film-edge-x) * 2.2),#000 calc(100% - var(--film-edge-x)),#000 100%);
+  mask-image:
+    linear-gradient(180deg,#000 0%,#000 var(--film-edge-y),transparent calc(var(--film-edge-y) * 2.2),transparent calc(100% - var(--film-edge-y) * 2.2),#000 calc(100% - var(--film-edge-y)),#000 100%),
+    linear-gradient(90deg,#000 0%,#000 var(--film-edge-x),transparent calc(var(--film-edge-x) * 2.2),transparent calc(100% - var(--film-edge-x) * 2.2),#000 calc(100% - var(--film-edge-x)),#000 100%);
+}
+
+.scroll-film-video{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  transform: scale(1.01);
+  will-change: contents;
+  -webkit-mask-image: radial-gradient(132% 118% at 50% 50%,#000 53%,rgba(0,0,0,.98) 62%,rgba(0,0,0,.9) 73%,rgba(0,0,0,.42) 88%,transparent 100%);
+  mask-image: radial-gradient(132% 118% at 50% 50%,#000 53%,rgba(0,0,0,.98) 62%,rgba(0,0,0,.9) 73%,rgba(0,0,0,.42) 88%,transparent 100%);
+}
+
+.scroll-film-vignette{
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg,rgba(245,229,224,.42) 0%,transparent 22%,transparent 78%,rgba(246,231,210,.38) 100%),
+    linear-gradient(180deg,rgba(29,21,20,.06) 0%,transparent 21%,transparent 75%,rgba(29,21,20,.07) 100%);
+  mix-blend-mode: multiply;
+}
+
+.scroll-film-topline{
+  position: absolute;
+  z-index: 5;
+  top: 112px;
+  left: max(28px,calc((100vw - 1440px)/2));
+  right: max(28px,calc((100vw - 1440px)/2));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(33,27,26,.34);
+  color: rgba(33,27,26,.68);
+  font: 500 8px/1 var(--rd-micro);
+  letter-spacing: .16em;
+}
+
+.film-copy{
+  position: absolute;
+  z-index: 4;
+  width: min(430px,31vw);
+  color: #211b1a;
+  opacity: 0;
+  will-change: opacity,transform;
+  text-shadow: 0 1px 24px rgba(255,247,238,.22);
+}
+
+.film-copy--left{
+  left: max(34px,calc((100vw - 1440px)/2 + 18px));
+}
+
+.film-copy--right{
+  right: max(34px,calc((100vw - 1440px)/2 + 18px));
+  text-align: right;
+}
+
+.film-copy--intro{
+  top: clamp(190px,27vh,300px);
+}
+
+.film-copy--open{
+  top: clamp(195px,28vh,310px);
+}
+
+.film-copy--light{
+  bottom: clamp(112px,15vh,180px);
+}
+
+.film-copy--finish{
+  bottom: clamp(106px,14vh,170px);
+}
+
+.film-copy small{
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  color: #6b1934;
+  font: 500 8px/1 var(--rd-micro);
+  letter-spacing: .16em;
+}
+
+.film-copy small:before{
+  content: '';
+  width: 25px;
+  height: 1px;
+  background: currentColor;
+}
+
+.film-copy--right small{
+  flex-direction: row-reverse;
+}
+
+.film-copy h1,
+.film-copy h2{
+  margin: 0;
+  color: #211b1a;
+  font: 400 clamp(58px,5.4vw,92px)/.82 var(--rd-display);
+  letter-spacing: -.038em;
+}
+
+.film-copy h1{
+  font-size: clamp(64px,6vw,102px);
+}
+
+.film-copy h2 em{
+  color: #8a3850;
+  font-style: italic;
+}
+
+.film-copy p{
+  max-width: 330px;
+  margin: 23px 0 0;
+  color: rgba(33,27,26,.76);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.film-copy--right p{
+  margin-left: auto;
+}
+
+.film-cta{
+  margin-top: 25px;
+  padding: 13px 0 10px;
+  border-top: 1px solid rgba(33,27,26,.62);
+  border-bottom: 1px solid rgba(33,27,26,.62);
+  width: min(270px,100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  color: #211b1a;
+  font: 600 11px/1.2 var(--rd-body);
+}
+
+.film-cta span{
+  font-size: 16px;
+}
+
+.scroll-film-progress{
+  position: absolute;
+  z-index: 6;
+  left: 24px;
+  top: 50%;
+  width: 1px;
+  height: min(250px,34vh);
+  transform: translateY(-50%);
+  background: rgba(33,27,26,.2);
+}
+
+.scroll-film-progress i{
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 3px;
+  height: calc(var(--film-progress) * 100%);
+  max-height: 100%;
+  background: #6b1934;
+  transform-origin: top;
+}
+
+.scroll-film-hint{
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: rgba(33,27,26,.68);
+  font: 500 8px/1 var(--rd-micro);
+  letter-spacing: .16em;
+  opacity: calc(1 - min(1,var(--film-progress) * 4));
+}
+
+.scroll-film-hint i{
+  font-style: normal;
+  font-family: var(--rd-body);
+  font-size: 15px;
+  animation: film-hint 1.5s ease-in-out infinite;
+}
+
+@keyframes film-hint{
+  0%,100%{transform:translateY(-2px)}
+  50%{transform:translateY(4px)}
+}
+
+/* The landing page after the film becomes calmer and more editorial, allowing
+   the scroll film to be the main visual event instead of competing with it. */
+.home-after-film{
+  position: relative;
+}
+
+.section--collections.home-after-film{
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: clamp(110px,11vw,180px) max(32px,calc((100vw - 1440px)/2));
+  background: #f5f0e8;
+}
+
+.section--collections.home-after-film:before{
+  content: 'THE COLLECTION  /  CONTINUE THE STORY';
+  display: block;
+  margin-bottom: clamp(54px,6vw,90px);
+  padding-top: 13px;
+  border-top: 1px solid rgba(33,27,26,.24);
+  color: #756965;
+  font: 500 8px/1 var(--rd-micro);
+  letter-spacing: .16em;
+}
+
+.story-teaser.home-after-film{
+  margin-top: 0;
+}
+
+.bestsellers.home-after-film{
+  border-top: 1px solid rgba(33,27,26,.14);
+}
+
+.is-public:has(.scroll-film) .header-inner{
+  background: rgba(250,246,239,.8);
+  border-color: rgba(255,255,255,.6);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+/* Responsive film layout ---------------------------------------------------
+   The desktop experience keeps the copy at the sides of the product. On
+   portrait tablets and phones the product becomes a centered "stage" with
+   dedicated copy zones above/below it, so text never fights the candle. */
+@media(max-width: 1100px){
+  .scroll-film{
+    height: 510svh;
+  }
+
+  .scroll-film-sticky{
+    height: 100svh;
+    min-height: 0;
+  }
+
+  .scroll-film-media{
+    --film-edge-x: clamp(24px,6vw,72px);
+    --film-edge-y: clamp(24px,4.6vw,54px);
+    inset: 20% 0 auto;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .scroll-film-media::before{
+    background:
+      linear-gradient(180deg,rgba(248,240,236,.82) 0%,rgba(248,240,236,.12) 14%,transparent 27%,transparent 73%,rgba(249,241,223,.12) 86%,rgba(249,241,223,.76) 100%),
+      linear-gradient(90deg,rgba(247,220,226,.42) 0%,rgba(247,220,226,.08) 13%,transparent 24%,transparent 76%,rgba(249,229,181,.08) 87%,rgba(249,229,181,.42) 100%);
+  }
+
+  .scroll-film-media::after{
+    -webkit-backdrop-filter: blur(26px) saturate(1.02);
+    backdrop-filter: blur(26px) saturate(1.02);
+  }
+
+  .scroll-film-video{
+    object-fit: contain;
+    object-position: 50% 50%;
+    transform: none;
+    -webkit-mask-image: radial-gradient(120% 116% at 50% 50%,#000 54%,rgba(0,0,0,.96) 66%,rgba(0,0,0,.7) 82%,transparent 100%);
+    mask-image: radial-gradient(120% 116% at 50% 50%,#000 54%,rgba(0,0,0,.96) 66%,rgba(0,0,0,.7) 82%,transparent 100%);
+  }
+
+  .scroll-film-vignette{
+    background:
+      linear-gradient(180deg,rgba(255,248,244,.34) 0%,transparent 24%,transparent 76%,rgba(255,247,231,.28) 100%),
+      linear-gradient(90deg,rgba(247,220,226,.12),transparent 24%,transparent 76%,rgba(249,229,181,.12));
+    mix-blend-mode: normal;
+  }
+
+  .scroll-film-topline{
+    top: max(88px, calc(env(safe-area-inset-top) + 74px));
+    left: 24px;
+    right: 24px;
+  }
+
+  .film-copy{
+    width: min(390px,42vw);
+  }
+
+  .film-copy--left{ left: 28px; }
+  .film-copy--right{ right: 28px; }
+
+  /* Opening copy sits below the film, later copy above it. This alternation
+     keeps the motion visible and still preserves the editorial rhythm. */
+  .film-copy--intro,
+  .film-copy--open{
+    top: auto;
+    bottom: max(54px, calc(env(safe-area-inset-bottom) + 42px));
+  }
+
+  .film-copy--light,
+  .film-copy--finish{
+    top: max(132px, calc(env(safe-area-inset-top) + 116px));
+    bottom: auto;
+  }
+
+  .film-copy h1,
+  .film-copy h2{
+    font-size: clamp(46px,6.6vw,72px);
+  }
+
+  .film-copy h1{
+    font-size: clamp(50px,7.2vw,78px);
+  }
+
+  .scroll-film-progress{
+    left: 14px;
+  }
+}
+
+/* Portrait tablet: reserve a clear middle band for the complete 16:9 film. */
+@media(max-width: 820px) and (orientation: portrait){
+  .scroll-film{
+    height: 480svh;
+  }
+
+  .scroll-film-topline{
+    top: max(82px, calc(env(safe-area-inset-top) + 68px));
+    left: 18px;
+    right: 18px;
+    font-size: 6.5px;
+    letter-spacing: .13em;
+  }
+
+  .scroll-film-media{
+    top: 31%;
+  }
+
+  .film-copy,
+  .film-copy--left,
+  .film-copy--right{
+    left: 22px;
+    right: 22px;
+    width: auto;
+    max-width: 430px;
+    text-align: left;
+  }
+
+  .film-copy--right{
+    margin-left: auto;
+  }
+
+  .film-copy--right p{
+    margin-left: 0;
+  }
+
+  .film-copy--right small{
+    flex-direction: row;
+  }
+
+  .film-copy--intro,
+  .film-copy--open{
+    top: max(108px, calc(env(safe-area-inset-top) + 94px));
+    bottom: auto;
+  }
+
+  .film-copy--light,
+  .film-copy--finish{
+    top: auto;
+    bottom: max(46px, calc(env(safe-area-inset-bottom) + 34px));
+  }
+
+  .film-copy small{
+    margin-bottom: 11px;
+    font-size: 6.5px;
+  }
+
+  .film-copy h1,
+  .film-copy h2{
+    max-width: 360px;
+    font-size: clamp(46px,9vw,66px);
+    line-height: .84;
+  }
+
+  .film-copy p{
+    max-width: 315px;
+    margin-top: 15px;
+    font-size: 10.5px;
+    line-height: 1.55;
+  }
+
+  .film-cta{
+    margin-top: 15px;
+  }
+
+  .scroll-film-progress{
+    left: 9px;
+    height: min(210px,25svh);
+  }
+
+  .scroll-film-hint{
+    bottom: max(16px, calc(env(safe-area-inset-bottom) + 8px));
+  }
+}
+
+/* Phones: treat the video as a fixed product stage and keep copy in safe
+   zones above/below. Body copy is kept where there is room and removed only
+   from the two transition beats on very narrow devices. */
+@media(max-width: 600px) and (orientation: portrait){
+  .scroll-film{
+    height: 445svh;
+  }
+
+  .scroll-film-topline{
+    top: max(72px, calc(env(safe-area-inset-top) + 58px));
+    left: 16px;
+    right: 16px;
+    padding-top: 10px;
+    font-size: 6px;
+    letter-spacing: .11em;
+  }
+
+  .scroll-film-topline span:last-child{
+    display: none;
+  }
+
+  .scroll-film-media{
+    top: 34%;
+  }
+
+  .film-copy,
+  .film-copy--left,
+  .film-copy--right{
+    left: 18px;
+    right: 18px;
+    width: auto;
+    max-width: 340px;
+    text-align: left;
+  }
+
+  .film-copy--intro,
+  .film-copy--open{
+    top: max(94px, calc(env(safe-area-inset-top) + 80px));
+    bottom: auto;
+  }
+
+  .film-copy--light,
+  .film-copy--finish{
+    top: auto;
+    bottom: max(38px, calc(env(safe-area-inset-bottom) + 26px));
+  }
+
+  .film-copy small{
+    gap: 9px;
+    margin-bottom: 9px;
+    font-size: 6px;
+  }
+
+  .film-copy small:before{
+    width: 18px;
+  }
+
+  .film-copy h1,
+  .film-copy h2{
+    max-width: 305px;
+    font-size: clamp(40px,12.6vw,56px);
+    line-height: .84;
+    letter-spacing: -.035em;
+  }
+
+  .film-copy p{
+    max-width: 292px;
+    margin-top: 12px;
+    font-size: 10px;
+    line-height: 1.48;
+  }
+
+  .film-copy--open p,
+  .film-copy--light p{
+    display: none;
+  }
+
+  .film-cta{
+    width: min(235px,78vw);
+    margin-top: 13px;
+    padding: 11px 0 9px;
+    font-size: 10px;
+  }
+
+  .scroll-film-progress{
+    left: 7px;
+    height: 22svh;
+  }
+
+  .scroll-film-hint{
+    display: none;
+  }
+
+  .section--collections.home-after-film{
+    padding: 82px 18px;
+  }
+
+  .section--collections.home-after-film:before{
+    margin-bottom: 42px;
+    font-size: 6px;
+  }
+}
+
+/* Small/short phones (SE-class heights): compress typography and move the
+   film slightly upward so neither copy zone collides with the product. */
+@media(max-width: 430px) and (max-height: 740px) and (orientation: portrait){
+  .scroll-film{
+    height: 420svh;
+  }
+
+  .scroll-film-media{
+    top: 33%;
+  }
+
+  .scroll-film-topline{
+    top: max(62px, calc(env(safe-area-inset-top) + 50px));
+  }
+
+  .film-copy--intro,
+  .film-copy--open{
+    top: max(78px, calc(env(safe-area-inset-top) + 66px));
+  }
+
+  .film-copy--light,
+  .film-copy--finish{
+    bottom: max(24px, calc(env(safe-area-inset-bottom) + 16px));
+  }
+
+  .film-copy h1,
+  .film-copy h2{
+    max-width: 280px;
+    font-size: clamp(36px,11.6vw,48px);
+  }
+
+  .film-copy p{
+    max-width: 265px;
+    margin-top: 9px;
+    font-size: 9.5px;
+    line-height: 1.42;
+  }
+
+  .film-copy--intro p,
+  .film-copy--open p,
+  .film-copy--light p{
+    display: none;
+  }
+
+  .film-cta{
+    margin-top: 10px;
+  }
+}
+
+/* Phone/tablet landscape: a split layout is substantially more readable than
+   stacking copy over a shallow viewport. Copy occupies the left rail and the
+   full video is contained on the right. */
+@media(max-height: 620px) and (orientation: landscape){
+  .scroll-film{
+    height: 430svh;
+  }
+
+  .scroll-film-sticky{
+    min-height: 0;
+  }
+
+  .scroll-film-media{
+    --film-edge-x: clamp(20px,3.6vw,54px);
+    --film-edge-y: clamp(18px,4vh,44px);
+    inset: 0 0 0 38%;
+    width: 62%;
+    height: 100%;
+    aspect-ratio: auto;
+    display: grid;
+    place-items: center;
+  }
+
+  .scroll-film-video{
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .scroll-film-vignette{
+    background: linear-gradient(90deg,rgba(246,216,223,.98) 0%,rgba(246,216,223,.84) 33%,transparent 56%);
+  }
+
+  .scroll-film-topline{
+    top: max(58px, calc(env(safe-area-inset-top) + 46px));
+    left: 18px;
+    right: 18px;
+    font-size: 6px;
+  }
+
+  .scroll-film-topline span:last-child{
+    display: none;
+  }
+
+  .film-copy,
+  .film-copy--left,
+  .film-copy--right,
+  .film-copy--intro,
+  .film-copy--open,
+  .film-copy--light,
+  .film-copy--finish{
+    left: 24px;
+    right: auto;
+    top: max(92px,23svh);
+    bottom: auto;
+    width: min(34vw,310px);
+    text-align: left;
+  }
+
+  .film-copy--right p{
+    margin-left: 0;
+  }
+
+  .film-copy--right small{
+    flex-direction: row;
+  }
+
+  .film-copy small{
+    margin-bottom: 7px;
+    font-size: 5.5px;
+  }
+
+  .film-copy h1,
+  .film-copy h2{
+    font-size: clamp(31px,5.4vw,48px);
+    line-height: .83;
+  }
+
+  .film-copy p{
+    max-width: 250px;
+    margin-top: 10px;
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  .film-copy--open p,
+  .film-copy--light p{
+    display: none;
+  }
+
+  .film-cta{
+    width: min(220px,30vw);
+    margin-top: 10px;
+    padding: 9px 0 8px;
+    font-size: 9px;
+  }
+
+  .scroll-film-progress{
+    display: none;
+  }
+
+  .scroll-film-hint{
+    display: none;
+  }
+}
+
+@media(prefers-reduced-motion: reduce){
+  .scroll-film{
+    height: 100svh;
+    min-height: 680px;
+  }
+
+  .scroll-film-sticky{
+    position: relative;
+  }
+
+  .scroll-film-hint,
+  .scroll-film-progress{
+    display: none;
+  }
+
+  .film-copy:not(.film-copy--finish){
+    display: none;
+  }
+
+  .film-copy--finish{
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+  }
+
+  .scroll-film-video{
+    transform: none;
+  }
+}
+
+/* Sticky film must remain relative to the viewport; the legacy app wrapper used
+   overflow:hidden, which turns it into the sticky containing block in browsers. */
+.app.is-public:has(.scroll-film){
+  overflow: visible;
+}
